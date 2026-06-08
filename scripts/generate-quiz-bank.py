@@ -574,27 +574,31 @@ def build_deal_eval_questions():
             f"{name} closed at approximately {value}.",
             "easy", deal=did,
         ))
-    # Size ranking / comparison
+    # Size ranking / comparison — options are deal names only (no $ values; that would give away the answer)
     ranked = sorted(DEAL_META, key=lambda x: -x[3])
     out.append(q(
         "Which deal had the highest total acquisition value?",
-        f"{ranked[0][1]} ({ranked[0][2]})",
-        [f"{ranked[1][1]} ({ranked[1][2]})", f"{ranked[2][1]} ({ranked[2][2]})", f"{ranked[-1][1]} ({ranked[-1][2]})"],
+        ranked[0][1],
+        [ranked[1][1], ranked[2][1], ranked[-1][1]],
         f"Disney · Fox at $71.3bn is the largest in the case set.",
         "easy", deal=0,
     ))
     out.append(q(
         "Which deal was the smallest by total value?",
-        f"{ranked[-1][1]} ({ranked[-1][2]})",
-        [f"{ranked[0][1]} ({ranked[0][2]})", f"{ranked[1][1]} ({ranked[1][2]})", f"{ranked[2][1]} ({ranked[2][2]})"],
-        f"Instagram at ~$1bn is the smallest headline deal.",
+        ranked[-1][1],
+        [ranked[0][1], ranked[1][1], ranked[2][1]],
+        f"Facebook · Instagram at ~$1bn is the smallest headline deal.",
         "easy", deal=0,
     ))
     out.append(q(
         "Which deals are valued above $25bn?",
-        "Microsoft · LinkedIn ($26.2bn) and Disney · Fox ($71.3bn)",
-        ["Kraft · Cadbury ($19.5bn) and Instagram (~$1bn)", "Amazon · WFM and CaixaBank · Bankia only", "Marriott · Starwood and VW · Porsche only"],
-        "Only MS-LinkedIn and Disney-Fox exceed $25bn in the case set.",
+        "Microsoft · LinkedIn and Disney · Fox",
+        [
+            "Kraft · Cadbury and Facebook · Instagram",
+            "Amazon · Whole Foods and CaixaBank · Bankia",
+            "Marriott · Starwood and VW · Porsche",
+        ],
+        "Only Microsoft · LinkedIn and Disney · Fox exceed $25bn in the case set.",
         "medium", deal=0,
     ))
     mixed_deals = [n for _, n, _, _, s, _ in DEAL_META if s == "Mixed"]
@@ -615,9 +619,13 @@ def build_deal_eval_questions():
     ))
     out.append(q(
         "Deals valued between $13bn and $16bn include:",
-        "Amazon · WFM, Marriott · Starwood, and LVMH · Tiffany",
-        ["Instagram and CaixaBank · Bankia only", "Disney · Fox and Instagram", "Microsoft · LinkedIn only"],
-        "WFM $13.7bn, Marriott ~$13.6bn, Tiffany $15.8bn.",
+        "Amazon · Whole Foods, Marriott · Starwood, and LVMH · Tiffany",
+        [
+            "Facebook · Instagram and CaixaBank · Bankia",
+            "Disney · Fox and Facebook · Instagram",
+            "Microsoft · LinkedIn only",
+        ],
+        "Whole Foods $13.7bn, Marriott ~$13.6bn, Tiffany $15.8bn fall in that band.",
         "medium", deal=0,
     ))
     return out
