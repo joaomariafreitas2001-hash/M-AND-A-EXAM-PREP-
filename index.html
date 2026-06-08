@@ -1,15 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Offline M&A exam revision — 7 lectures, 9 case deals, MCQ practice, and flashcards for ESADE MFin.">
+  <meta name="description" content="Offline M&A exam revision  -  7 lectures, 9 case deals, MCQ practice, and flashcards for ESADE MFin.">
   <meta name="theme-color" content="#1e40af">
   <meta name="color-scheme" content="light">
-  <title>M&A — Deals Learn</title>
+  <title>M&A  -  Deals Learn</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="dns-prefetch" href="https://www.youtube.com">
-  <link rel="preconnect" href="https://www.youtube.com" crossorigin>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -33,35 +31,16 @@
         <button type="button" class="nav-btn" data-view="compare">Compare</button>
         <button type="button" class="nav-btn" data-view="practice">Practice</button>
         <button type="button" class="nav-btn" data-view="flashcards">Flashcards</button>
+        <button type="button" class="nav-btn" data-view="history">History</button>
       </nav>
-
-      <div class="music-panel" aria-label="Background music">
-        <h2 class="music-panel-title">Study music</h2>
-        <div class="music-controls">
-          <button type="button" class="music-btn" id="musicToggle" aria-pressed="false" aria-controls="yt-player">
-            Play music
-          </button>
-        </div>
-        <label class="music-vol-label" for="musicVolume">Volume</label>
-        <input type="range" class="music-vol" id="musicVolume" min="0" max="100" value="40">
-        <a class="music-link" href="https://www.youtube.com/watch?v=K4moMXMCN4w" target="_blank" rel="noopener noreferrer">
-          Open on YouTube<span class="sr-only"> (opens in new tab)</span>
-        </a>
-      </div>
     </aside>
 
     <main class="main" id="main-content" tabindex="-1" aria-live="polite" aria-atomic="false"></main>
   </div>
 
-  <div class="yt-host" aria-hidden="true">
-    <div id="yt-player" title="Background music player"></div>
-  </div>
-
-  <script src="https://www.youtube.com/iframe_api" async></script>
   <script src="js/study-data.js" defer></script>
   <script src="js/flashcards-data.js" defer></script>
   <script src="js/quiz-data.js" defer></script>
-  <script src="js/music.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

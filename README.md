@@ -1,6 +1,6 @@
-# M&A — Deals Learn (local)
+﻿# M&A  -  Deals Learn (local)
 
-Interactive revision for **ESADE M&A exam** — 7 lectures + 9 case deals. No install — works offline.
+Interactive revision for **ESADE M&A exam**  -  7 lectures + 9 case deals. No install  -  works offline.
 
 ## Open
 
@@ -24,15 +24,15 @@ Double-click **`index.html`** or open it in Chrome/Edge.
 
 | # | Deal | Value | Year |
 |---|------|-------|------|
-| 1 | Microsoft — LinkedIn | $26.2bn | 2016 |
-| 2 | CaixaBank — Bankia | ~€4.3bn | 2020–21 |
-| 3 | Amazon — Whole Foods | $13.7bn | 2017 |
-| 4 | Facebook — Instagram | ~$1bn | 2012 |
-| 5 | Kraft — Cadbury | $19.5bn | 2010 |
-| 6 | Disney — 21st Century Fox | $71.3bn | 2019 |
-| 7 | Marriott — Starwood | ~$13.6bn | 2016 |
-| 8 | VW — Porsche | ~€8.36bn | 2009–12 |
-| 9 | LVMH — Tiffany | $15.8bn | 2021 |
+| 1 | Microsoft  -  LinkedIn | $26.2bn | 2016 |
+| 2 | CaixaBank  -  Bankia | ~€4.3bn | 2020–21 |
+| 3 | Amazon  -  Whole Foods | $13.7bn | 2017 |
+| 4 | Facebook  -  Instagram | ~$1bn | 2012 |
+| 5 | Kraft  -  Cadbury | $19.5bn | 2010 |
+| 6 | Disney  -  21st Century Fox | $71.3bn | 2019 |
+| 7 | Marriott  -  Starwood | ~$13.6bn | 2016 |
+| 8 | VW  -  Porsche | ~€8.36bn | 2009–12 |
+| 9 | LVMH  -  Tiffany | $15.8bn | 2021 |
 
 ## Modes
 
@@ -41,7 +41,7 @@ Double-click **`index.html`** or open it in Chrome/Edge.
 | **Home** | Quick start + progress (saved in browser) |
 | **Study** | Part I: 7 lectures · Part II: 9 deals · formulas |
 | **Compare** | Side-by-side deal matrix |
-| **Practice** | MCQ drill — filter by lecture, deal, or difficulty |
+| **Practice** | MCQ drill  -  filter by lecture, deal, or difficulty |
 | **Flashcards** | Lecture + deal facts · spaced repeat |
 
 ## Files
