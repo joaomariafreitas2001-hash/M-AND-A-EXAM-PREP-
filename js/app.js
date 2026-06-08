@@ -10,7 +10,7 @@ const LS_FLASH = 'madeals_flash_v1';
 const LS_STATS = 'madeals_quiz_stats_v1';
 const LS_HISTORY = 'madeals_quiz_history_v1';
 const HISTORY_MAX = 50;
-const QUIZ_LENGTHS = [10, 15, 20];
+const QUIZ_LENGTHS = [10, 15, 20, 40];
 const DEFAULT_QUIZ_LENGTH = 15;
 const MAIN = '#main-content';
 
@@ -480,7 +480,7 @@ function renderHome() {
     <div class="grid-2" role="list">
       <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>Lectures L1–L8 + 9 deal case notes</p></button>
       <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix  -  value, type, motive</p></button>
-      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} in bank · 10, 15, or 20 per session</p></button>
+      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} in bank · 10, 15, 20, or 40 per session</p></button>
       <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${FLASHCARDS.length} cards · spaced repeat</p></button>
     </div>
     ${renderGradePredictionCard(gradePred)}
@@ -725,7 +725,7 @@ function renderPracticeSetup() {
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Practice MCQ</h1>
-    <p class="page-sub">${ALL_QUESTIONS.length} in bank · pick 10, 15, or 20 questions per session</p>
+    <p class="page-sub">${ALL_QUESTIONS.length} in bank · pick 10, 15, 20, or 40 questions per session</p>
     <div class="card">
       <fieldset class="filter-fieldset">
         <legend>Topic filter</legend>
