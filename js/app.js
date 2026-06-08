@@ -964,6 +964,15 @@ function renderQuizResults() {
     wrong,
   });
 
+  logQuizComplete({
+    score: quizState.score,
+    total,
+    pct,
+    filterLabel: filters.filterLabel,
+    difficultyLabel: filters.difficultyLabel,
+    missed: wrong.length,
+  });
+
   const gradePred = computePredictedGrade(getQuizHistory());
 
   $(MAIN).innerHTML = `
@@ -1077,8 +1086,12 @@ document.addEventListener('keydown', (e) => {
 
 $$('.nav-btn').forEach((b) => b.addEventListener('click', () => navigate(b.dataset.view)));
 
+function bootApp() {
+  initTelemetry(() => navigate('home'));
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => navigate('home'));
+  document.addEventListener('DOMContentLoaded', bootApp);
 } else {
-  navigate('home');
+  bootApp();
 }
