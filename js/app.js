@@ -10,6 +10,8 @@ const LS_FLASH = 'madeals_flash_v1';
 const LS_STATS = 'madeals_quiz_stats_v1';
 const LS_HISTORY = 'madeals_quiz_history_v1';
 const HISTORY_MAX = 50;
+const QUIZ_LENGTHS = [10, 15, 20];
+const DEFAULT_QUIZ_LENGTH = 15;
 const MAIN = '#main-content';
 
 const PAGE_TITLES = {
@@ -397,7 +399,7 @@ function renderHistory() {
             <span class="history-meta">
               <strong>${a.score} / ${a.total}</strong>
               <span>${escHtml(formatAttemptDate(a.at))}</span>
-              <span>${escHtml(a.filterLabel)} · ${escHtml(a.difficultyLabel)}</span>
+              <span>${escHtml(a.filterLabel)} · ${escHtml(a.difficultyLabel)}${a.filters?.sessionLabel ? ` · ${escHtml(a.filters.sessionLabel)}` : ''}</span>
             </span>
             <span class="history-miss">${a.wrong.length} missed</span>
           </summary>
@@ -478,7 +480,7 @@ function renderHome() {
     <div class="grid-2" role="list">
       <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>Lectures L1–L8 + 9 deal case notes</p></button>
       <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix  -  value, type, motive</p></button>
-      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} questions · lessons & deals</p></button>
+      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} in bank · 10, 15, or 20 per session</p></button>
       <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${FLASHCARDS.length} cards · spaced repeat</p></button>
     </div>
     ${renderGradePredictionCard(gradePred)}
@@ -723,7 +725,7 @@ function renderPracticeSetup() {
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Practice MCQ</h1>
-    <p class="page-sub">${ALL_QUESTIONS.length} questions · lectures, deals, and cross-topic</p>
+    <p class="page-sub">${ALL_QUESTIONS.length} in bank · pick 10, 15, or 20 questions per session</p>
     <div class="card">
       <fieldset class="filter-fieldset">
         <legend>Topic filter</legend>
@@ -751,12 +753,24 @@ function renderPracticeSetup() {
           <button type="button" class="filter-chip" data-diff="hard" aria-pressed="false">Hard</button>
         </div>
       </fieldset>
-      <button type="button" class="btn btn-primary" id="startQuizBtn" style="width:100%;margin-top:8px">Start quiz</button>
+      <fieldset class="filter-fieldset">
+        <legend>Questions per session</legend>
+        <div class="filter-grid" id="lengthFilter" role="group">
+          ${QUIZ_LENGTHS.map((n) => `<button type="button" class="filter-chip${n === DEFAULT_QUIZ_LENGTH ? ' selected' : ''}" data-len="${n}" aria-pressed="${n === DEFAULT_QUIZ_LENGTH}">${n} questions</button>`).join('')}
+        </div>
+      </fieldset>
+      <button type="button" class="btn btn-primary" id="startQuizBtn" style="width:100%;margin-top:8px">Start ${DEFAULT_QUIZ_LENGTH}-question quiz</button>
     </div>
   `;
 
   let dealF = 'all';
   let diffF = 'all';
+  let quizLen = DEFAULT_QUIZ_LENGTH;
+
+  const updateStartBtn = () => {
+    const btn = $('#startQuizBtn');
+    if (btn) btn.textContent = `Start ${quizLen}-question quiz`;
+  };
 
   $$('.card .filter-chip[data-d]').forEach((chip) => {
     chip.addEventListener('click', () => {
@@ -780,6 +794,18 @@ function renderPracticeSetup() {
       diffF = chip.dataset.diff;
     });
   });
+  $$('#lengthFilter .filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      $$('#lengthFilter .filter-chip').forEach((c) => {
+        c.classList.remove('selected');
+        c.setAttribute('aria-pressed', 'false');
+      });
+      chip.classList.add('selected');
+      chip.setAttribute('aria-pressed', 'true');
+      quizLen = +chip.dataset.len;
+      updateStartBtn();
+    });
+  });
 
   $('#startQuizBtn').onclick = () => {
     let pool = [...ALL_QUESTIONS];
@@ -789,8 +815,9 @@ function renderPracticeSetup() {
       alert('No questions match filters.');
       return;
     }
+    const sessionSize = Math.min(quizLen, pool.length);
     quizState = {
-      questions: shuffle(pool),
+      questions: shuffle(pool).slice(0, sessionSize),
       current: 0,
       score: 0,
       selected: null,
@@ -803,8 +830,10 @@ function renderPracticeSetup() {
       filters: {
         topic: dealF,
         difficulty: diffF,
+        questionCount: sessionSize,
         filterLabel: filterLabel(dealF),
         difficultyLabel: diffF === 'all' ? 'All difficulties' : diffF,
+        sessionLabel: `${sessionSize} questions`,
       },
     };
     renderQuizQuestion();
@@ -968,7 +997,7 @@ function renderQuizResults() {
     score: quizState.score,
     total,
     pct,
-    filterLabel: filters.filterLabel,
+    filterLabel: filters.sessionLabel ? `${filters.filterLabel} · ${filters.sessionLabel}` : filters.filterLabel,
     difficultyLabel: filters.difficultyLabel,
     missed: wrong.length,
   });
@@ -980,7 +1009,7 @@ function renderQuizResults() {
     <div class="card" style="text-align:center">
       <div style="font-size:3rem;font-weight:800;color:var(--accent)">${pct}%</div>
       <p style="color:var(--muted);margin:12px 0">${quizState.score} / ${total} correct</p>
-      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:8px">${escHtml(filters.filterLabel)} · ${escHtml(filters.difficultyLabel)}</p>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:8px">${escHtml(filters.filterLabel)} · ${escHtml(filters.difficultyLabel)}${filters.sessionLabel ? ` · ${escHtml(filters.sessionLabel)}` : ''}</p>
       ${gradePred.grade != null && gradePred.confidence !== 'insufficient' ? `<div class="grade-result-line"><span style="color:var(--muted);font-size:0.88rem">Updated predicted grade:</span> ${renderGradePredictionCard(gradePred, { compact: true })}</div>` : ''}
       <p style="font-size:0.95rem;margin-bottom:20px">${pct >= 80 ? 'Strong  -  exam-ready on deal facts' : pct >= 60 ? 'Review missed questions below, then study hub' : 'Repeat weak topics via filters'}</p>
       <div class="btn-row" style="justify-content:center">
