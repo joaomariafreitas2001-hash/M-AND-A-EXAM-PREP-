@@ -1,22 +1,24 @@
-# M&A — Deals Learn
+# M&A — Deals Learn (local)
 
-Interactive revision for **9 ESADE M&A exam case deals**. Static site — no build step.
+Interactive revision for **ESADE M&A exam** — 7 lectures + 9 case deals. No install — works offline.
 
-**Live:** deploy via [Vercel](https://vercel.com) from this repo.
-
-## Deploy on Vercel
-
-1. Import [joaomariafreitas2001-hash/M-AND-A-EXAM-PREP-](https://github.com/joaomariafreitas2001-hash/M-AND-A-EXAM-PREP-)
-2. Framework Preset: **Other**
-3. Build Command: *(leave empty)*
-4. Output Directory: **.** (root)
-5. Deploy
-
-## Open locally
+## Open
 
 Double-click **`index.html`** or open it in Chrome/Edge.
 
 **Study music:** sidebar → **Play music** (needs internet). Volume remembered in this browser.
+
+## Lectures covered
+
+| # | Lecture | Key topics |
+|---|---------|------------|
+| 1 | Introduction | Synergies, 4 motives, horizontal/vertical/diversification, legal forms |
+| 2 | Acquisition Process | 12 phases, DD, LOI, SPA, earn-out, valuation, winner's curse |
+| 3 | Post-Acquisition | Culture, communication, integration speed, hard vs soft problems |
+| 5 | MBOs | Newco structure, leverage, 7 value sources, equity ratchet, exit |
+| 6 | PE & VC | GP/LP, 2+20, expansion capital, tag/drag-along, angels |
+| 7 | Takeovers | Hostile vs friendly, poison pill, bear hug, Spain 30%/50% rules |
+| 8 | IPO | Book-building, greenshoe, costs, firm commitment underwriting |
 
 ## Deals covered
 
@@ -37,10 +39,10 @@ Double-click **`index.html`** or open it in Chrome/Edge.
 | Tab | What it does |
 |-----|----------------|
 | **Home** | Quick start + progress (saved in browser) |
-| **Study** | Expandable notes per deal + exam frameworks |
-| **Compare** | Side-by-side matrix (value, type, motive, outcome) |
-| **Practice** | MCQ drill (54 Qs), filter by deal/difficulty |
-| **Flashcards** | Key facts + spaced repeat (localStorage) |
+| **Study** | Part I: 7 lectures · Part II: 9 deals · formulas |
+| **Compare** | Side-by-side deal matrix |
+| **Practice** | MCQ drill — filter by lecture, deal, or difficulty |
+| **Flashcards** | Lecture + deal facts · spaced repeat |
 
 ## Files
 

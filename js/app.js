@@ -26,6 +26,22 @@ function announcePage(view) {
   document.title = `${PAGE_TITLES[view] || 'Deals'} — M&A Deals Learn`;
 }
 
+function questionLabel(q) {
+  if (q.lecture) return LECTURE_LABELS[q.lecture] || `Lecture ${q.lecture}`;
+  if (q.deal) return DEAL_LABELS[q.deal] || 'Cross-topic';
+  return 'Cross-topic';
+}
+
+function matchesQuizFilter(q, filter) {
+  if (filter === 'all') return true;
+  if (filter === 'lessons') return !!q.lecture;
+  if (filter === 'deals') return q.deal > 0;
+  if (filter === 'cross') return !q.lecture && !q.deal;
+  if (filter.startsWith('l')) return q.lecture === +filter.slice(1);
+  if (filter.startsWith('d')) return q.deal === +filter.slice(1);
+  return true;
+}
+
 function shuffle(a) {
   const b = [...a];
   for (let i = b.length - 1; i > 0; i--) {
@@ -94,11 +110,11 @@ function renderHome() {
   const mastered = Object.values(fp).filter((v) => v >= 3).length;
   $(MAIN).innerHTML = `
     <h1 class="page-title">M&A Deals Learn</h1>
-    <p class="page-sub">9 case deals for your ESADE M&A exam — sector context, structure, synergies, and post-merger outcomes</p>
+    <p class="page-sub">Full course revision — 7 lectures + 9 case deals for your ESADE M&A exam</p>
     <div class="grid-2" role="list">
-      <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>All 9 deals — expandable notes & exam traps</p></button>
+      <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>Lectures L1–L8 + 9 deal case notes</p></button>
       <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix — value, type, motive</p></button>
-      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} questions · filter by deal</p></button>
+      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} questions · lessons & deals</p></button>
       <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${FLASHCARDS.length} cards · spaced repeat</p></button>
     </div>
     <div class="card">
@@ -115,12 +131,19 @@ function renderHome() {
     <div class="card">
       <h3>Exam-night checklist</h3>
       <ul class="trap-list">
+        <li>Only synergies create value — premium must be &lt; synergies</li>
+        <li>12-phase process: integration plan (8) before due diligence (9)</li>
         <li>Scale vs scope — which motive fits each deal?</li>
-        <li>Cash vs stock — why did the target accept that structure?</li>
+        <li>MBO formula: (EBITDA × multiple) − net debt · PE = 2+20</li>
         <li>Know deal value, year, premium, and close date for each</li>
-        <li>Hard vs soft synergies — what was promised vs delivered?</li>
-        <li>One post-merger failure and one success story each</li>
       </ul>
+    </div>
+    <div class="card">
+      <h3>Lecture index</h3>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:10px">L1 Intro · L2 Process · L3 Integration · L5 MBO · L6 PE/VC · L7 Takeovers · L8 IPO</p>
+      <div class="btn-row">
+        ${STUDY_LECTURES.map((l) => `<button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:0.8rem" data-lecture="${l.id}">L${l.id}</button>`).join('')}
+      </div>
     </div>
     <div class="card">
       <h3>Deal index</h3>
@@ -140,9 +163,32 @@ function renderHome() {
       }
     }, 50);
   }));
+  $$('[data-lecture]').forEach((el) => el.addEventListener('click', () => {
+    navigate('study');
+    setTimeout(() => {
+      const det = document.querySelector(`[data-lecture-id="${el.dataset.lecture}"]`);
+      if (det) {
+        det.open = true;
+        det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  }));
 }
 
 function renderStudy() {
+  const lecturesHtml = STUDY_LECTURES.map(
+    (l) => `
+    <details class="study-session" data-lecture-id="${l.id}">
+      <summary>${l.title}</summary>
+      <div class="study-body">
+        <p><strong>Lesson overview:</strong> ${l.overview}</p>
+        ${l.sections.map((sec) => `<h4>${sec.h}</h4>${sec.html}`).join('')}
+        <h4>Exam traps</h4>
+        <ul class="trap-list">${l.traps.map((t) => `<li>${t}</li>`).join('')}</ul>
+      </div>
+    </details>`
+  ).join('');
+
   const dealsHtml = STUDY_DEALS.map(
     (d) => `
     <details class="study-session" data-deal-id="${d.id}">
@@ -169,10 +215,13 @@ function renderStudy() {
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Study hub</h1>
-    <p class="page-sub">Condensed from your 9 deal case presentations — expand each for full exam notes</p>
+    <p class="page-sub">From MA — Full Course Revision + 9 deal case studies</p>
+    <h2 style="font-size:1.1rem;margin:24px 0 12px;color:var(--accent-text)">Part I — Lectures</h2>
+    ${lecturesHtml}
+    <h2 style="font-size:1.1rem;margin:28px 0 12px;color:var(--accent-text)">Part II — Deal case studies</h2>
     ${dealsHtml}
     <div class="card" style="margin-top:20px">
-      <h3>Exam frameworks</h3>
+      <h3>Exam frameworks & formulas</h3>
       <div class="formula-grid">${formulaHtml}</div>
     </div>
   `;
@@ -221,21 +270,33 @@ function renderCompare() {
 }
 
 function renderPracticeSetup() {
+  const lessonChips = Object.entries(LECTURE_LABELS)
+    .map(([id, label]) => `<button type="button" class="filter-chip" data-d="l${id}" aria-pressed="false">${label.replace(' — ', ' ')}</button>`)
+    .join('');
   const dealChips = Object.entries(DEAL_LABELS)
-    .map(([id, label]) => `<button type="button" class="filter-chip" data-d="${id}" aria-pressed="false">${label}</button>`)
+    .map(([id, label]) => `<button type="button" class="filter-chip" data-d="d${id}" aria-pressed="false">${label}</button>`)
     .join('');
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Practice MCQ</h1>
-    <p class="page-sub">${ALL_QUESTIONS.length} questions · deal facts, structure, and comparisons</p>
+    <p class="page-sub">${ALL_QUESTIONS.length} questions · lectures, deals, and cross-topic</p>
     <div class="card">
       <fieldset class="filter-fieldset">
-        <legend>Deal filter</legend>
+        <legend>Topic filter</legend>
         <div class="filter-grid" id="dealFilter" role="group">
-          <button type="button" class="filter-chip selected" data-d="all" aria-pressed="true">All deals</button>
-          ${dealChips}
-          <button type="button" class="filter-chip" data-d="0" aria-pressed="false">Cross-deal</button>
+          <button type="button" class="filter-chip selected" data-d="all" aria-pressed="true">All</button>
+          <button type="button" class="filter-chip" data-d="lessons" aria-pressed="false">All lessons</button>
+          <button type="button" class="filter-chip" data-d="deals" aria-pressed="false">All deals</button>
+          <button type="button" class="filter-chip" data-d="cross" aria-pressed="false">Cross-topic</button>
         </div>
+      </fieldset>
+      <fieldset class="filter-fieldset">
+        <legend>By lecture</legend>
+        <div class="filter-grid" role="group">${lessonChips}</div>
+      </fieldset>
+      <fieldset class="filter-fieldset">
+        <legend>By deal</legend>
+        <div class="filter-grid" role="group">${dealChips}</div>
       </fieldset>
       <fieldset class="filter-fieldset">
         <legend>Difficulty</legend>
@@ -253,26 +314,32 @@ function renderPracticeSetup() {
   let dealF = 'all';
   let diffF = 'all';
 
-  const bindFilter = (id, key) => {
-    $$(`#${id} .filter-chip`).forEach((chip) => {
-      chip.addEventListener('click', () => {
-        $$(`#${id} .filter-chip`).forEach((c) => {
-          c.classList.remove('selected');
-          c.setAttribute('aria-pressed', 'false');
-        });
-        chip.classList.add('selected');
-        chip.setAttribute('aria-pressed', 'true');
-        if (key === 'd') dealF = chip.dataset.d;
-        else diffF = chip.dataset.diff;
+  $$('.card .filter-chip[data-d]').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      $$('.card .filter-chip[data-d]').forEach((c) => {
+        c.classList.remove('selected');
+        c.setAttribute('aria-pressed', 'false');
       });
+      chip.classList.add('selected');
+      chip.setAttribute('aria-pressed', 'true');
+      dealF = chip.dataset.d;
     });
-  };
-  bindFilter('dealFilter', 'd');
-  bindFilter('diffFilter', 'diff');
+  });
+  $$('#diffFilter .filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      $$('#diffFilter .filter-chip').forEach((c) => {
+        c.classList.remove('selected');
+        c.setAttribute('aria-pressed', 'false');
+      });
+      chip.classList.add('selected');
+      chip.setAttribute('aria-pressed', 'true');
+      diffF = chip.dataset.diff;
+    });
+  });
 
   $('#startQuizBtn').onclick = () => {
     let pool = [...ALL_QUESTIONS];
-    if (dealF !== 'all') pool = pool.filter((q) => q.deal === +dealF);
+    if (dealF !== 'all') pool = pool.filter((q) => matchesQuizFilter(q, dealF));
     if (diffF !== 'all') pool = pool.filter((q) => q.difficulty === diffF);
     if (!pool.length) {
       alert('No questions match filters.');
@@ -306,7 +373,7 @@ function renderQuizQuestion() {
 
   const pct = (quizState.current / qs.length) * 100;
   const diffClass = { easy: 'badge-easy', medium: 'badge-medium', hard: 'badge-hard' }[q.difficulty];
-  const dealLabel = q.deal ? DEAL_LABELS[q.deal] || 'Cross-deal' : 'Cross-deal';
+  const dealLabel = questionLabel(q);
 
   $(MAIN).innerHTML = `
     <div class="quiz-header">
@@ -426,7 +493,7 @@ function renderFlashcards() {
 
   const prog = getFlashProgress();
   const mastered = Object.values(prog).filter((v) => v >= 3).length;
-  const dealTag = card.deal ? DEAL_LABELS[card.deal] || '' : 'Framework';
+  const dealTag = card.lecture ? LECTURE_LABELS[card.lecture] : card.deal ? DEAL_LABELS[card.deal] : 'Framework';
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Flashcards</h1>
