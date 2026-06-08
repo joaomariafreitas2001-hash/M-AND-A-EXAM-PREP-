@@ -71,8 +71,8 @@ function showNameModal(onDone) {
   overlay.innerHTML = `
     <div class="telemetry-modal card">
       <h2 id="telemetry-modal-title">Welcome</h2>
-      <p class="telemetry-modal-sub">Enter your first name so your quiz results can be saved for the course. Only the instructor sees the summary sheet.</p>
-      <label class="telemetry-label" for="telemetry-name-input">First name</label>
+      <p class="telemetry-modal-sub">Enter your name to have access!</p>
+      <label class="telemetry-label" for="telemetry-name-input">Name</label>
       <input type="text" id="telemetry-name-input" class="telemetry-input" maxlength="80" autocomplete="name" placeholder="e.g. João" />
       <p class="telemetry-error hidden" id="telemetry-name-error">Please enter your name.</p>
       <button type="button" class="btn btn-primary telemetry-submit" id="telemetry-name-submit">Continue</button>
