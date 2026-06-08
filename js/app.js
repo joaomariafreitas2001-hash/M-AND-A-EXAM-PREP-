@@ -1116,6 +1116,7 @@ document.addEventListener('keydown', (e) => {
 $$('.nav-btn').forEach((b) => b.addEventListener('click', () => navigate(b.dataset.view)));
 
 function bootApp() {
+  initUpdateCheck();
   initTelemetry(() => navigate('home'));
 }
 
