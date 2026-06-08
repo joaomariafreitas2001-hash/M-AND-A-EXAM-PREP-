@@ -36,7 +36,7 @@ const TELEMETRY = {
 };
 ```
 
-3. Save, push to GitHub (or redeploy on Vercel).
+3. **Save the file**, then commit and push to GitHub (Vercel only serves what is on `main`). If `webhookUrl` is still `''`, the welcome modal will not appear.
 
 ## Step 5 — Test (1 min)
 
