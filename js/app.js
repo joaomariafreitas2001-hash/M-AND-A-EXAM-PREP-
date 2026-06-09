@@ -10,6 +10,7 @@ let dealSizesState = {
   sub: 'menu',
   rankOrder: [],
   rankResult: null,
+  successPerspective: 'acquirer',
   successRankOrder: [],
   successRankResult: null,
   valueDeck: [],
@@ -619,7 +620,7 @@ const COMPARE_COLUMNS = [
   { key: 'pay', label: 'Payment', type: 'string', col: 'col-pay' },
   { key: 'premiumSort', label: 'Premium', type: 'number', display: 'premium', nullsLast: true, col: 'col-premium' },
   { key: 'motive', label: 'Motive', type: 'string', col: 'col-motive' },
-  { key: 'successScore', label: 'Success', type: 'number', display: 'success', col: 'col-success' },
+  { key: 'successScore', label: 'Success (acquirer)', type: 'number', display: 'success', col: 'col-success' },
   { key: 'outcome', label: 'Outcome', type: 'string', col: 'col-outcome' },
 ];
 
@@ -769,27 +770,43 @@ function resetDealSizesValues() {
   dealSizesState.valueFeedback = null;
 }
 
-function getDealSuccessItems() {
+const SUCCESS_PERSPECTIVES = {
+  acquirer: {
+    label: 'Acquirer',
+    sublabel: 'the buying company',
+    ratingKey: 'successAcquirer',
+    scoreKey: 'successAcquirerScore',
+  },
+  acquiree: {
+    label: 'Acquiree',
+    sublabel: 'the target / selling side',
+    ratingKey: 'successAcquiree',
+    scoreKey: 'successAcquireeScore',
+  },
+};
+
+function getDealSuccessItems(perspective = dealSizesState.successPerspective) {
+  const cfg = SUCCESS_PERSPECTIVES[perspective] || SUCCESS_PERSPECTIVES.acquirer;
   return COMPARE_ROWS.map((row, id) => ({
     id,
     deal: row.deal,
-    success: row.success,
-    successScore: row.successScore,
+    success: row[cfg.ratingKey],
+    successScore: row[cfg.scoreKey],
   }));
 }
 
-function dealSuccessById(id) {
-  return getDealSuccessItems().find((d) => d.id === id);
+function dealSuccessById(id, perspective = dealSizesState.successPerspective) {
+  return getDealSuccessItems(perspective).find((d) => d.id === id);
 }
 
-function dealSuccessCorrectOrder() {
-  return [...getDealSuccessItems()]
+function dealSuccessCorrectOrder(perspective = dealSizesState.successPerspective) {
+  return [...getDealSuccessItems(perspective)]
     .sort((a, b) => b.successScore - a.successScore || a.deal.localeCompare(b.deal))
     .map((d) => d.id);
 }
 
-function getSuccessExtremes() {
-  const items = getDealSuccessItems();
+function getSuccessExtremes(perspective = dealSizesState.successPerspective) {
+  const items = getDealSuccessItems(perspective);
   const max = Math.max(...items.map((i) => i.successScore));
   const min = Math.min(...items.map((i) => i.successScore));
   return {
@@ -865,17 +882,22 @@ function renderDealSizes() {
   dealSizesState.sub = 'menu';
   $(MAIN).innerHTML = `
     <h1 class="page-title">Deal sizes</h1>
-    <p class="page-sub">Exam drills on deal values and acquirer success for all 9 case studies</p>
+    <p class="page-sub">Exam drills on deal values and success (acquirer vs acquiree) for all 9 case studies</p>
     <div class="grid-2 sizes-menu-grid">
       <button type="button" class="tile" id="sizesRankBtn" role="listitem">
         <span class="tile-icon" aria-hidden="true">↕</span>
         <h4>Rank largest → smallest</h4>
         <p>Reorder all 9 deals by total acquisition value. Values hidden until you check.</p>
       </button>
-      <button type="button" class="tile" id="sizesSuccessBtn" role="listitem">
+      <button type="button" class="tile" id="sizesSuccessAcquirerBtn" role="listitem">
         <span class="tile-icon" aria-hidden="true">★</span>
-        <h4>Rank by success</h4>
-        <p>See best and worst outcomes, then sort most → least successful for the acquirer.</p>
+        <h4>Success · acquirer</h4>
+        <p>See best and worst for the buyer, then sort most → least successful.</p>
+      </button>
+      <button type="button" class="tile" id="sizesSuccessAcquireeBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">☆</span>
+        <h4>Success · acquiree</h4>
+        <p>Same drill from the target side (premium, exit, autonomy).</p>
       </button>
       <button type="button" class="tile" id="sizesValueBtn" role="listitem">
         <span class="tile-icon" aria-hidden="true">#</span>
@@ -898,7 +920,13 @@ function renderDealSizes() {
     resetDealSizesRank();
     renderDealSizesRank();
   };
-  $('#sizesSuccessBtn').onclick = () => {
+  $('#sizesSuccessAcquirerBtn').onclick = () => {
+    dealSizesState.successPerspective = 'acquirer';
+    dealSizesState.sub = 'success-intro';
+    renderDealSizesSuccessIntro();
+  };
+  $('#sizesSuccessAcquireeBtn').onclick = () => {
+    dealSizesState.successPerspective = 'acquiree';
     dealSizesState.sub = 'success-intro';
     renderDealSizesSuccessIntro();
   };
@@ -910,10 +938,12 @@ function renderDealSizes() {
 }
 
 function renderDealSizesSuccessIntro() {
-  const { most, least } = getSuccessExtremes();
+  const perspective = dealSizesState.successPerspective;
+  const cfg = SUCCESS_PERSPECTIVES[perspective];
+  const { most, least } = getSuccessExtremes(perspective);
   $(MAIN).innerHTML = `
-    <h1 class="page-title">Rank by success</h1>
-    <p class="page-sub">Course verdict for the acquirer · most successful at the top</p>
+    <h1 class="page-title">Rank by success · ${cfg.label.toLowerCase()}</h1>
+    <p class="page-sub">Course verdict for ${cfg.sublabel} · most successful at the top</p>
     <div class="card sizes-success-intro">
       <h3>Before you sort</h3>
       <p class="sizes-scale-note">Scale (high → low): <strong>Exceptional</strong> · <strong>Strong</strong> · <strong>Moderate</strong> · <strong>Mixed</strong></p>
@@ -944,10 +974,12 @@ function renderDealSizesSuccessIntro() {
 }
 
 function renderDealSizesSuccessRank() {
+  const perspective = dealSizesState.successPerspective;
+  const cfg = SUCCESS_PERSPECTIVES[perspective];
   const order = dealSizesState.successRankOrder;
   const result = dealSizesState.successRankResult;
-  const correct = dealSuccessCorrectOrder();
-  const byId = Object.fromEntries(getDealSuccessItems().map((d) => [d.id, d]));
+  const correct = dealSuccessCorrectOrder(perspective);
+  const byId = Object.fromEntries(getDealSuccessItems(perspective).map((d) => [d.id, d]));
   const expectedScores = correct.map((id) => byId[id].successScore);
 
   let resultHtml = '';
@@ -956,7 +988,7 @@ function renderDealSizesSuccessRank() {
     resultHtml = `
       <div class="card sizes-result ${perfect ? 'sizes-result-ok' : 'sizes-result-bad'}">
         <h3>${perfect ? 'Perfect order' : `${result.correctCount} / 9 in the right success tier`}</h3>
-        ${perfect ? '<p>All deals ranked correctly for the acquirer.</p>' : '<p>Red rows are in the wrong success tier. Correct order below.</p>'}
+        ${perfect ? `<p>All deals ranked correctly for the ${cfg.label.toLowerCase()}.</p>` : '<p>Red rows are in the wrong success tier. Correct order below.</p>'}
         <ol class="sizes-ref-list">
           ${correct.map((id) => {
             const d = dealSuccessById(id);
@@ -967,8 +999,8 @@ function renderDealSizesSuccessRank() {
   }
 
   $(MAIN).innerHTML = `
-    <h1 class="page-title">Sort by success</h1>
-    <p class="page-sub">Most successful for the acquirer at the top · drag or use arrows</p>
+    <h1 class="page-title">Sort by success · ${cfg.label.toLowerCase()}</h1>
+    <p class="page-sub">Most successful for the ${cfg.label.toLowerCase()} at the top · drag or use arrows</p>
     <div class="card">
       <ol class="deal-rank-list" id="dealSuccessRankList">
         ${order.map((id, pos) => {
