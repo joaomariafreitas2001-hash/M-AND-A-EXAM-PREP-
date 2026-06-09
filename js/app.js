@@ -17,6 +17,7 @@ let dealSizesState = {
   valueIdx: 0,
   valueScore: 0,
   valueFeedback: null,
+  valueLogged: false,
 };
 const DEAL_SIZE_TOLERANCE = 1;
 const LS_FLASH = 'madeals_flash_v1';
@@ -788,6 +789,7 @@ function resetDealSizesValues() {
   dealSizesState.valueIdx = 0;
   dealSizesState.valueScore = 0;
   dealSizesState.valueFeedback = null;
+  dealSizesState.valueLogged = false;
 }
 
 const SUCCESS_PERSPECTIVES = {
@@ -1114,10 +1116,19 @@ function renderDealSizesSuccessRank() {
     const wrongPositions = userScores
       .map((s, i) => (s !== expectedScores[i] ? i : -1))
       .filter((i) => i >= 0);
+    const correctCount = 9 - wrongPositions.length;
     dealSizesState.successRankResult = {
-      correctCount: 9 - wrongPositions.length,
+      correctCount,
       wrongPositions,
     };
+    logDrillComplete({
+      drill: `Success · ${SUCCESS_PERSPECTIVES[perspective].label}`,
+      score: correctCount,
+      total: 9,
+      pct: Math.round((correctCount / 9) * 100),
+      missed: wrongPositions.length,
+      filterLabel: 'Deal drills',
+    });
     unlockDealRef();
     renderDealSizesSuccessRank();
   };
@@ -1197,10 +1208,19 @@ function renderDealSizesRank() {
     const wrongPositions = userOrder
       .map((id, i) => (id !== correct[i] ? i : -1))
       .filter((i) => i >= 0);
+    const correctCount = 9 - wrongPositions.length;
     dealSizesState.rankResult = {
-      correctCount: 9 - wrongPositions.length,
+      correctCount,
       wrongPositions,
     };
+    logDrillComplete({
+      drill: 'Rank by value',
+      score: correctCount,
+      total: 9,
+      pct: Math.round((correctCount / 9) * 100),
+      missed: wrongPositions.length,
+      filterLabel: 'Deal drills',
+    });
     renderDealSizesRank();
   };
 }
@@ -1215,6 +1235,17 @@ function renderDealSizesValues() {
     const total = deck.length;
     const score = dealSizesState.valueScore;
     const pct = Math.round((score / total) * 100);
+    if (!dealSizesState.valueLogged) {
+      dealSizesState.valueLogged = true;
+      logDrillComplete({
+        drill: 'Type the value',
+        score,
+        total,
+        pct,
+        missed: total - score,
+        filterLabel: 'Deal drills',
+      });
+    }
     $(MAIN).innerHTML = `
       <h1 class="page-title">Value drill complete</h1>
       <div class="card" style="text-align:center">

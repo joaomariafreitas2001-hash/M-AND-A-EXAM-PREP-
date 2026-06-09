@@ -51,15 +51,20 @@ const TELEMETRY = {
 
 | Column | Example |
 |--------|---------|
-| Timestamp | When the quiz finished |
-| Event | `quiz_complete` or `learner_registered` |
+| Timestamp | When the activity finished |
+| Event | `learner_registered`, `quiz_complete`, or `drill_complete` |
 | Name | First name they entered |
-| Score / Total / Pct | e.g. 124 / 147 / 84 |
-| Topic filter | e.g. `All lessons`, `L5 - MBOs`, `Kraft · Cadbury` |
-| Difficulty | `All difficulties`, `medium`, etc. |
-| Missed | Number of wrong answers |
+| Score / Total / Pct | e.g. 7 / 9 / 78 (empty for short-answer sessions) |
+| Topic filter | e.g. `All lessons`, `Deal drills`, `Exam prep` |
+| Difficulty | `All difficulties`, `medium`, etc. (MCQ only) |
+| Missed | Wrong answers or wrong positions |
+| Drill | e.g. `Rank by value`, `Success · acquirer`, `Classify defenses` |
 
-**Count tests per person:** filter Sheet by Name, or `=COUNTIF(C:C,"Maria")` for quiz rows.
+**Events logged:** Practice MCQ (`quiz_complete`); deal drills and exam prep (`drill_complete`).
+
+**Existing Sheet:** paste the updated `google-sheet-webhook.gs` and redeploy. Column **Drill** is added automatically in row 1 if missing.
+
+**Count tests per person:** filter Sheet by Name, or `=COUNTIF(C:C,"Maria")` for activity rows.
 
 ---
 

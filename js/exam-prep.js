@@ -10,6 +10,8 @@ let examPrepState = {
   saDeck: [],
   saIdx: 0,
   saRevealed: false,
+  tkQuizLogged: false,
+  saLogged: false,
 };
 
 function renderExamPrep() {
@@ -68,6 +70,7 @@ function renderExamPrepMenu() {
     examPrepState.tkQuizIdx = 0;
     examPrepState.tkQuizScore = 0;
     examPrepState.tkQuizAnswered = false;
+    examPrepState.tkQuizLogged = false;
     renderTakeoverToolkitQuiz();
   };
   $('#epConceptsBtn').onclick = () => {
@@ -79,6 +82,7 @@ function renderExamPrepMenu() {
     examPrepState.saDeck = pool.slice(0, SHORT_ANSWER_SESSION_SIZE);
     examPrepState.saIdx = 0;
     examPrepState.saRevealed = false;
+    examPrepState.saLogged = false;
     examPrepState.sub = 'short-answer';
     renderShortAnswerSession();
   };
@@ -130,6 +134,7 @@ function renderTakeoverToolkit() {
     examPrepState.tkQuizIdx = 0;
     examPrepState.tkQuizScore = 0;
     examPrepState.tkQuizAnswered = false;
+    examPrepState.tkQuizLogged = false;
     renderTakeoverToolkitQuiz();
   };
 }
@@ -138,10 +143,23 @@ function renderTakeoverToolkitQuiz() {
   const deck = examPrepState.tkQuizDeck;
   const idx = examPrepState.tkQuizIdx;
   if (idx >= deck.length) {
+    const score = examPrepState.tkQuizScore;
+    const total = deck.length;
+    if (!examPrepState.tkQuizLogged) {
+      examPrepState.tkQuizLogged = true;
+      logDrillComplete({
+        drill: 'Classify defenses',
+        score,
+        total,
+        pct: total ? Math.round((score / total) * 100) : 0,
+        missed: total - score,
+        filterLabel: 'Exam prep',
+      });
+    }
     $(MAIN).innerHTML = `
       <h1 class="page-title">Classify complete</h1>
       <div class="card" style="text-align:center">
-        <div style="font-size:2.5rem;font-weight:800;color:var(--accent)">${examPrepState.tkQuizScore} / ${deck.length}</div>
+        <div style="font-size:2.5rem;font-weight:800;color:var(--accent)">${score} / ${total}</div>
         <p style="color:var(--muted);margin:12px 0">Phase classifications correct</p>
         <div class="btn-row" style="justify-content:center">
           <button type="button" class="btn btn-secondary" id="epBack">Back</button>
@@ -158,6 +176,7 @@ function renderTakeoverToolkitQuiz() {
       examPrepState.tkQuizIdx = 0;
       examPrepState.tkQuizScore = 0;
       examPrepState.tkQuizAnswered = false;
+      examPrepState.tkQuizLogged = false;
       renderTakeoverToolkitQuiz();
     };
     return;
@@ -250,6 +269,7 @@ function renderConceptIndex() {
     examPrepState.saDeck = pool.slice(0, SHORT_ANSWER_SESSION_SIZE);
     examPrepState.saIdx = 0;
     examPrepState.saRevealed = false;
+    examPrepState.saLogged = false;
     examPrepState.sub = 'short-answer';
     renderShortAnswerSession();
   };
@@ -259,6 +279,14 @@ function renderShortAnswerSession() {
   const deck = examPrepState.saDeck;
   const idx = examPrepState.saIdx;
   if (idx >= deck.length) {
+    if (!examPrepState.saLogged) {
+      examPrepState.saLogged = true;
+      logDrillComplete({
+        drill: 'Short answers',
+        total: deck.length,
+        filterLabel: 'Exam prep',
+      });
+    }
     examPrepState.sub = 'short-answer-done';
     return renderShortAnswerDone();
   }
@@ -327,6 +355,7 @@ function renderShortAnswerDone() {
     examPrepState.saDeck = pool.slice(0, SHORT_ANSWER_SESSION_SIZE);
     examPrepState.saIdx = 0;
     examPrepState.saRevealed = false;
+    examPrepState.saLogged = false;
     examPrepState.sub = 'short-answer';
     renderShortAnswerSession();
   };

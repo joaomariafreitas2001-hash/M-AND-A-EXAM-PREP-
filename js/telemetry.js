@@ -42,19 +42,28 @@ function postTelemetry(payload) {
   }
 }
 
-function logQuizComplete(data) {
+function logSessionComplete(data) {
   if (!telemetryEnabled() || !getLearnerName()) return;
   postTelemetry({
-    event: 'quiz_complete',
+    event: data.event || 'session_complete',
     name: getLearnerName(),
-    score: data.score,
-    total: data.total,
-    pct: data.pct,
+    score: data.score != null ? data.score : '',
+    total: data.total != null ? data.total : '',
+    pct: data.pct != null ? data.pct : '',
     filterLabel: data.filterLabel || '',
     difficultyLabel: data.difficultyLabel || '',
-    missed: data.missed ?? 0,
+    missed: data.missed != null ? data.missed : '',
+    drill: data.drill || '',
     at: new Date().toISOString(),
   });
+}
+
+function logQuizComplete(data) {
+  logSessionComplete({ ...data, event: 'quiz_complete' });
+}
+
+function logDrillComplete(data) {
+  logSessionComplete({ ...data, event: 'drill_complete' });
 }
 
 function showNameModal(onDone) {
