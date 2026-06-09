@@ -358,7 +358,7 @@ function renderSidebarGrade() {
 
   if (!pred.attempts || pred.confidence === 'insufficient') {
     const msg = pred.attempts
-      ? `${pred.attempts} quiz${pred.attempts === 1 ? '' : 'zes'} · need 3+ for prediction`
+      ? `${pred.attempts} ${pred.attempts === 1 ? 'quiz' : 'quizzes'} · need 3+ for grade`
       : 'Complete 3+ quizzes';
     el.innerHTML = `
       <button type="button" class="sidebar-grade-btn sidebar-grade-empty" id="sidebarGradeBtn" title="View quiz history">
