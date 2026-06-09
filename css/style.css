@@ -1068,6 +1068,76 @@ body {
   margin: 0;
 }
 
+.toolkit-section { margin-bottom: 24px; }
+.toolkit-section h3 {
+  font-size: 1rem;
+  color: var(--accent-text);
+  margin-bottom: 12px;
+}
+.toolkit-cards { display: flex; flex-direction: column; gap: 8px; }
+.toolkit-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.toolkit-card summary {
+  cursor: pointer;
+  font-size: 0.92rem;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.toolkit-card summary::-webkit-details-marker { display: none; }
+.toolkit-card p {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+.toolkit-exam-line {
+  font-size: 0.88rem !important;
+  color: var(--accent-text) !important;
+}
+.phase-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.phase-pre-bid { background: var(--accent-soft); color: var(--accent-text); }
+.phase-post-bid { background: #fef3c7; color: #92400e; }
+.phase-buyer { background: var(--bad-bg); color: var(--bad); }
+.phase-regulatory { background: var(--surface3); color: var(--muted); }
+.sa-prompt {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.sa-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.55;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  resize: vertical;
+  min-height: 120px;
+}
+.sa-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.sa-model h4 { font-size: 0.95rem; color: var(--accent-text); margin-bottom: 8px; }
+
 @media (max-width: 720px) {
   .app { flex-direction: column; }
   .sidebar {

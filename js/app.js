@@ -22,6 +22,7 @@ const DEAL_SIZE_TOLERANCE = 1;
 const LS_FLASH = 'madeals_flash_v1';
 const LS_STATS = 'madeals_quiz_stats_v1';
 const LS_HISTORY = 'madeals_quiz_history_v1';
+const LS_DEAL_REF_UNLOCKED = 'madeals_deal_ref_unlocked_v1';
 const HISTORY_MAX = 50;
 const QUIZ_LENGTHS = [10, 15, 20, 40];
 const DEFAULT_QUIZ_LENGTH = 15;
@@ -31,7 +32,8 @@ const PAGE_TITLES = {
   home: 'Home',
   study: 'Study hub',
   compare: 'Compare deals',
-  'deal-sizes': 'Deal sizes',
+  'deal-sizes': 'Deal drills',
+  'exam-prep': 'Exam prep',
   practice: 'Practice MCQ',
   flashcards: 'Flashcards',
   history: 'Quiz history',
@@ -461,6 +463,7 @@ function navigate(view) {
     study: renderStudy,
     compare: renderCompare,
     'deal-sizes': renderDealSizes,
+    'exam-prep': renderExamPrep,
     practice: renderPracticeSetup,
     flashcards: renderFlashcards,
     history: renderHistory,
@@ -494,8 +497,9 @@ function renderHome() {
     <p class="page-sub">Full course revision  -  7 lectures + 9 case deals for your ESADE M&A exam</p>
     <div class="grid-2" role="list">
       <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>Lectures L1–L8 + 9 deal case notes</p></button>
+      <button type="button" class="tile" data-go="exam-prep" role="listitem"><span class="tile-icon" aria-hidden="true">✎</span><h4>Exam prep</h4><p>Takeover toolkit · short answers · theory</p></button>
       <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix  -  value, type, motive</p></button>
-      <button type="button" class="tile" data-go="deal-sizes" role="listitem"><span class="tile-icon" aria-hidden="true">↕</span><h4>Deal sizes</h4><p>Rank by value · type billions</p></button>
+      <button type="button" class="tile" data-go="deal-sizes" role="listitem"><span class="tile-icon" aria-hidden="true">↕</span><h4>Deal drills</h4><p>Rank value & success · type billions</p></button>
       <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} in bank · 10, 15, 20, or 40 per session</p></button>
       <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${FLASHCARDS.length} cards · spaced repeat</p></button>
     </div>
@@ -756,6 +760,22 @@ function isDealValueCorrect(entered, actual) {
   return Math.abs(entered - actual) <= DEAL_SIZE_TOLERANCE;
 }
 
+function isDealRefUnlocked() {
+  try {
+    return localStorage.getItem(LS_DEAL_REF_UNLOCKED) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function unlockDealRef() {
+  try {
+    localStorage.setItem(LS_DEAL_REF_UNLOCKED, '1');
+  } catch {
+    /* ignore */
+  }
+}
+
 function resetDealSizesRank() {
   const ids = getDealSizeItems().map((d) => d.id);
   dealSizesState.rankOrder = shuffle(ids);
@@ -881,7 +901,7 @@ function renderDealSizes() {
   if (dealSizesState.sub === 'success-rank') return renderDealSizesSuccessRank();
   dealSizesState.sub = 'menu';
   $(MAIN).innerHTML = `
-    <h1 class="page-title">Deal sizes</h1>
+    <h1 class="page-title">Deal drills</h1>
     <p class="page-sub">Exam drills on deal values and success (acquirer vs acquiree) for all 9 case studies</p>
     <div class="grid-2 sizes-menu-grid">
       <button type="button" class="tile" id="sizesRankBtn" role="listitem">
@@ -905,6 +925,7 @@ function renderDealSizes() {
         <p>Name shown · enter billions in the box · ±1bn counts as correct</p>
       </button>
     </div>
+    ${isDealRefUnlocked() ? `
     <div class="card">
       <h3>Reference order (largest first)</h3>
       <ol class="sizes-ref-list">
@@ -913,7 +934,10 @@ function renderDealSizes() {
           return `<li><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.valueLabel)}</span></li>`;
         }).join('')}
       </ol>
-    </div>
+    </div>` : `
+    <div class="card">
+      <p class="sizes-hint">Complete a rank or value drill and check your answers to unlock the value answer key here.</p>
+    </div>`}
   `;
   $('#sizesRankBtn').onclick = () => {
     dealSizesState.sub = 'rank';
@@ -1055,6 +1079,7 @@ function renderDealSizesSuccessRank() {
       correctCount: 9 - wrongPositions.length,
       wrongPositions,
     };
+    unlockDealRef();
     renderDealSizesSuccessRank();
   };
 }
@@ -1147,6 +1172,7 @@ function renderDealSizesValues() {
   const fb = dealSizesState.valueFeedback;
 
   if (idx >= deck.length) {
+    unlockDealRef();
     const total = deck.length;
     const score = dealSizesState.valueScore;
     const pct = Math.round((score / total) * 100);
@@ -1230,6 +1256,7 @@ function renderDealSizesValues() {
     const ok = isDealValueCorrect(entered, actual);
     if (ok) dealSizesState.valueScore++;
     dealSizesState.valueFeedback = { ok, entered, lo, hi };
+    unlockDealRef();
     renderDealSizesValues();
   });
 
