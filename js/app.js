@@ -7,6 +7,36 @@ let quizState = {};
 let flashState = { deck: [], idx: 0, flipped: false };
 let compareSort = { key: 'yearSort', asc: false };
 let studyDealTab = 1;
+let dealsState = { tab: 'summaries' };
+
+const LATEST_UPDATES = [
+  {
+    title: 'Tabbed deal summary cards',
+    text: 'Each of the 9 cases has a structured English card: deal structure, process rounds, acquirer and target motives, outcome, and exam traps.',
+    action: { view: 'deals', tab: 'summaries' },
+    actionLabel: 'Open Deals → Summaries',
+  },
+  {
+    title: 'Simpler sidebar',
+    text: 'Navigation is now Home, Lecture Theory, Deals, Practice, and History. Compare and Deal drills live inside Deals.',
+    action: { view: 'deals' },
+    actionLabel: 'Explore Deals',
+  },
+  {
+    title: 'Success ranking reference order',
+    text: 'Before you sort (acquirer or acquiree), the full course order and reasoning appears at the bottom of the intro screen.',
+    action: { view: 'deals', tab: 'drills', drill: 'success-acquirer' },
+    actionLabel: 'Try Success · acquirer drill',
+  },
+  {
+    title: 'Drill logging in Google Sheet',
+    text: 'Deal drills and exam prep sessions now log to the same Sheet as MCQ practice (new Drill column).',
+  },
+  {
+    title: 'Reload fix',
+    text: 'Home loads immediately on refresh. The name prompt overlays the page instead of leaving a blank screen.',
+  },
+];
 let dealSizesState = {
   sub: 'menu',
   rankOrder: [],
@@ -32,13 +62,17 @@ const MAIN = '#main-content';
 
 const PAGE_TITLES = {
   home: 'Home',
-  study: 'Study hub',
-  compare: 'Compare deals',
-  'deal-sizes': 'Deal drills',
-  'exam-prep': 'Exam prep',
+  'lecture-theory': 'Lecture Theory',
+  deals: 'Deals',
   practice: 'Practice MCQ',
-  flashcards: 'Flashcards',
-  history: 'Quiz history',
+  history: 'History',
+};
+
+const NAV_ALIASES = {
+  study: 'lecture-theory',
+  'exam-prep': 'lecture-theory',
+  compare: 'deals',
+  'deal-sizes': 'deals',
 };
 
 const FILTER_LABELS = {
@@ -478,7 +512,34 @@ function renderHistory() {
   });
 }
 
-function navigate(view) {
+function applyNavigateOptions(view, opts = {}) {
+  if (view === 'deals') {
+    dealsState.tab = opts.tab || (currentView === 'deals' ? dealsState.tab : 'summaries');
+    if (opts.dealId) studyDealTab = opts.dealId;
+    if (opts.drill === 'success-acquirer') {
+      dealsState.tab = 'drills';
+      dealSizesState.sub = 'success-intro';
+      dealSizesState.successPerspective = 'acquirer';
+    } else if (opts.drill === 'success-acquiree') {
+      dealsState.tab = 'drills';
+      dealSizesState.sub = 'success-intro';
+      dealSizesState.successPerspective = 'acquiree';
+    } else if (opts.tab === 'drills' && !opts.keepDrill) {
+      dealSizesState.sub = opts.drillSub || 'menu';
+    }
+  }
+  if (view === 'lecture-theory' && currentView !== 'lecture-theory') {
+    examPrepState.sub = opts.examSub || 'menu';
+  }
+}
+
+function navigate(view, opts = {}) {
+  if (NAV_ALIASES[view]) {
+    if (view === 'compare') opts.tab = opts.tab || 'compare';
+    if (view === 'deal-sizes') opts.tab = opts.tab || 'drills';
+    view = NAV_ALIASES[view];
+  }
+  applyNavigateOptions(view, opts);
   currentView = view;
   $$('.nav-btn').forEach((b) => {
     const on = b.dataset.view === view;
@@ -489,12 +550,9 @@ function navigate(view) {
   announcePage(view);
   const renderers = {
     home: renderHome,
-    study: renderStudy,
-    compare: renderCompare,
-    'deal-sizes': renderDealSizes,
-    'exam-prep': renderExamPrep,
+    'lecture-theory': renderLectureTheory,
+    deals: renderDeals,
     practice: renderPracticeSetup,
-    flashcards: renderFlashcards,
     history: renderHistory,
   };
   try {
@@ -509,10 +567,39 @@ function navigate(view) {
   focusMain();
 }
 
+function renderLatestUpdates() {
+  return `
+    <div class="card updates-card">
+      <h3>Latest updates</h3>
+      <p class="sizes-hint" style="margin-bottom:14px">Shipped in the last few hours — click through to try each feature.</p>
+      <ul class="updates-list">
+        ${LATEST_UPDATES.map((u, i) => `
+          <li class="updates-item">
+            <div class="updates-item-head">
+              <span class="updates-num">${i + 1}</span>
+              <strong>${escHtml(u.title)}</strong>
+            </div>
+            <p>${escHtml(u.text)}</p>
+            ${u.action ? `<button type="button" class="btn btn-secondary btn-sm updates-go" data-update-view="${escAttr(u.action.view)}"${u.action.tab ? ` data-update-tab="${escAttr(u.action.tab)}"` : ''}${u.action.drill ? ` data-update-drill="${escAttr(u.action.drill)}"` : ''}>${escHtml(u.actionLabel)}</button>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+    </div>`;
+}
+
+function bindLatestUpdates() {
+  $$('.updates-go').forEach((btn) => {
+    btn.onclick = () => {
+      const opts = { view: btn.dataset.updateView };
+      if (btn.dataset.updateTab) opts.tab = btn.dataset.updateTab;
+      if (btn.dataset.updateDrill) opts.drill = btn.dataset.updateDrill;
+      navigate(opts.view, opts);
+    };
+  });
+}
+
 function renderHome() {
   const st = getStats();
-  const fp = getFlashProgress();
-  const mastered = Object.values(fp).filter((v) => v >= 3).length;
   const allHist = getQuizHistory();
   const hist = allHist.slice(0, 5);
   const gradePred = computePredictedGrade(allHist);
@@ -532,24 +619,22 @@ function renderHome() {
   $(MAIN).innerHTML = `
     <h1 class="page-title">M&A Deals Learn</h1>
     <p class="page-sub">Full course revision  -  7 lectures + 9 case deals for your ESADE M&A exam</p>
+    ${renderLatestUpdates()}
     <div class="grid-2" role="list">
-      <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>Lectures L1–L8 + 9 deal case notes</p></button>
-      <button type="button" class="tile" data-go="exam-prep" role="listitem"><span class="tile-icon" aria-hidden="true">✎</span><h4>Exam prep</h4><p>Takeover toolkit · short answers · theory</p></button>
-      <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix  -  value, type, motive</p></button>
-      <button type="button" class="tile" data-go="deal-sizes" role="listitem"><span class="tile-icon" aria-hidden="true">↕</span><h4>Deal drills</h4><p>Rank value & success · type billions</p></button>
+      <button type="button" class="tile" data-go="lecture-theory" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Lecture Theory</h4><p>Lectures L1–L8 · takeover toolkit · short answers</p></button>
+      <button type="button" class="tile" data-go="deals" role="listitem"><span class="tile-icon" aria-hidden="true">📋</span><h4>Deals</h4><p>Case summaries · compare matrix · rank & value drills</p></button>
       <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${bankCount()} in bank · 10, 15, 20, or 40 per session</p></button>
-      <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${flashCount()} cards · spaced repeat</p></button>
+      <button type="button" class="tile" data-go="history" role="listitem"><span class="tile-icon" aria-hidden="true">📊</span><h4>History</h4><p>Quiz attempts and predicted grade</p></button>
     </div>
     ${renderGradePredictionCard(gradePred)}
     <div class="card">
       <h3>Your progress (this browser)</h3>
       <p style="color:var(--muted);font-size:0.88rem;margin-bottom:8px">
-        Quiz attempts: <strong>${st.attempts}</strong> · Best score: <strong>${st.best}%</strong><br>
-        Flashcards mastered (3+ streak): <strong>${mastered}</strong> / ${flashCount()}
+        Quiz attempts: <strong>${st.attempts}</strong> · Best score: <strong>${st.best}%</strong>
       </p>
       <div class="btn-row">
         <button class="btn btn-primary" data-go="practice">Start practice →</button>
-        <button class="btn btn-secondary" data-go="flashcards">Review flashcards</button>
+        <button class="btn btn-secondary" data-go="deals">Review deals →</button>
       </div>
     </div>
     ${recentHtml}
@@ -579,15 +664,15 @@ function renderHome() {
   `;
   $$('[data-go]').forEach((el) => el.addEventListener('click', () => navigate(el.dataset.go)));
   $('[data-go="history"]')?.addEventListener('click', () => navigate('history'));
+  bindLatestUpdates();
   $$('[data-deal]').forEach((el) => el.addEventListener('click', () => {
-    openStudyDealTab(+el.dataset.deal);
-    navigate('study');
+    navigate('deals', { tab: 'summaries', dealId: +el.dataset.deal });
     setTimeout(() => {
       document.querySelector('.deal-resumo-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
   }));
   $$('[data-lecture]').forEach((el) => el.addEventListener('click', () => {
-    navigate('study');
+    navigate('lecture-theory');
     setTimeout(() => {
       const det = document.querySelector(`[data-lecture-id="${el.dataset.lecture}"]`);
       if (det) {
@@ -718,7 +803,11 @@ function openStudyDealTab(dealId) {
   if (DEAL_RESUMOS[dealId]) studyDealTab = dealId;
 }
 
-function renderStudy() {
+function renderLectureTheory() {
+  if (examPrepState.sub !== 'menu') {
+    return renderExamPrep();
+  }
+
   const lecturesHtml = STUDY_LECTURES.map(
     (l) => `
     <details class="study-session" data-lecture-id="${l.id}">
@@ -737,18 +826,116 @@ function renderStudy() {
   ).join('');
 
   $(MAIN).innerHTML = `
-    <h1 class="page-title">Study hub</h1>
-    <p class="page-sub">From MA  -  Full Course Revision + 9 deal case studies</p>
-    <h2 style="font-size:1.1rem;margin:24px 0 12px;color:var(--accent-text)">Part I  -  Lectures</h2>
+    <h1 class="page-title">Lecture Theory</h1>
+    <p class="page-sub">Lectures L1–L8 · written-exam drills · frameworks</p>
+    <h2 style="font-size:1.1rem;margin:24px 0 12px;color:var(--accent-text)">Lectures</h2>
     ${lecturesHtml}
-    <h2 style="font-size:1.1rem;margin:28px 0 12px;color:var(--accent-text)">Part II  -  Deal case studies (${STUDY_DEALS.length} deals)</h2>
-    ${renderDealResumoTabs()}
+    <h2 style="font-size:1.1rem;margin:28px 0 12px;color:var(--accent-text)">Written exam drills</h2>
+    <div class="grid-2 sizes-menu-grid">
+      <button type="button" class="tile" id="epToolkitBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">🛡</span>
+        <h4>Takeover toolkit</h4>
+        <p>${TAKEOVER_TERMS.length} terms · pre-bid, post-bid, buyer tactics</p>
+      </button>
+      <button type="button" class="tile" id="epToolkitQuizBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">?</span>
+        <h4>Classify defenses</h4>
+        <p>Pre-bid, post-bid, or buyer tactic? · self-check quiz</p>
+      </button>
+      <button type="button" class="tile" id="epConceptsBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">📋</span>
+        <h4>Concept index</h4>
+        <p>IM, escrow, ratchet, LBU, earn-out, tag/drag</p>
+      </button>
+      <button type="button" class="tile" id="epShortAnswerBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">✎</span>
+        <h4>Short answers</h4>
+        <p>${SHORT_ANSWER_SESSION_SIZE} questions · model answer reveal</p>
+      </button>
+    </div>
     <div class="card" style="margin-top:20px">
       <h3>Exam frameworks & formulas</h3>
       <div class="formula-grid">${formulaHtml}</div>
     </div>
+    <div class="card">
+      <h3>Deals part of the exam</h3>
+      <p class="sizes-hint" style="margin-bottom:12px">Case summaries, compare matrix, and rank/value drills are in <strong>Deals</strong>.</p>
+      <button type="button" class="btn btn-primary" data-go="deals">Open Deals →</button>
+    </div>
   `;
+
+  $('#epToolkitBtn').onclick = () => {
+    examPrepState.sub = 'toolkit';
+    examPrepState.toolkitMode = 'browse';
+    renderLectureTheory();
+  };
+  $('#epToolkitQuizBtn').onclick = () => {
+    examPrepState.sub = 'toolkit-quiz';
+    examPrepState.tkQuizDeck = shuffle([...TAKEOVER_TERMS]);
+    examPrepState.tkQuizIdx = 0;
+    examPrepState.tkQuizScore = 0;
+    examPrepState.tkQuizAnswered = false;
+    examPrepState.tkQuizLogged = false;
+    renderLectureTheory();
+  };
+  $('#epConceptsBtn').onclick = () => {
+    examPrepState.sub = 'concepts';
+    renderLectureTheory();
+  };
+  $('#epShortAnswerBtn').onclick = () => {
+    const pool = shuffle([...SHORT_ANSWER_QUESTIONS]);
+    examPrepState.saDeck = pool.slice(0, SHORT_ANSWER_SESSION_SIZE);
+    examPrepState.saIdx = 0;
+    examPrepState.saRevealed = false;
+    examPrepState.saLogged = false;
+    examPrepState.sub = 'short-answer';
+    renderLectureTheory();
+  };
+  $('[data-go="deals"]')?.addEventListener('click', () => navigate('deals'));
+}
+
+function renderDealsSubNav(activeTab) {
+  const tabs = [
+    { id: 'summaries', label: 'Case summaries' },
+    { id: 'compare', label: 'Compare matrix' },
+    { id: 'drills', label: 'Drills' },
+  ];
+  return `
+    <div class="deals-subnav" role="tablist" aria-label="Deals sections">
+      ${tabs.map((t) => `
+        <button type="button" class="deals-subnav-btn${activeTab === t.id ? ' active' : ''}" role="tab" aria-selected="${activeTab === t.id}" data-deals-tab="${t.id}">${escHtml(t.label)}</button>
+      `).join('')}
+    </div>`;
+}
+
+function bindDealsSubNav() {
+  $$('.deals-subnav-btn').forEach((btn) => {
+    btn.onclick = () => {
+      dealsState.tab = btn.dataset.dealsTab;
+      if (dealsState.tab === 'drills') dealSizesState.sub = 'menu';
+      renderDeals();
+    };
+  });
+}
+
+function renderDealsSummaries() {
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Deals</h1>
+    <p class="page-sub">${STUDY_DEALS.length} ESADE case studies · structure, process, motives, outcome</p>
+    ${renderDealsSubNav('summaries')}
+    ${renderDealResumoTabs()}
+  `;
+  bindDealsSubNav();
   bindDealResumoTabs();
+}
+
+function renderDeals() {
+  if (dealsState.tab === 'drills') {
+    if (dealSizesState.sub !== 'menu') return renderDealSizes();
+    return renderDealsDrillsMenu();
+  }
+  if (dealsState.tab === 'compare') return renderDealsCompare();
+  return renderDealsSummaries();
 }
 
 const COMPARE_COLUMNS = [
@@ -796,7 +983,7 @@ function sortCompareRows(rows) {
   });
 }
 
-function renderCompare() {
+function renderDealsCompare() {
   const sorted = sortCompareRows(COMPARE_ROWS);
   const headers = COMPARE_COLUMNS.map((col) => {
     const active = compareSort.key === col.key;
@@ -820,8 +1007,9 @@ function renderCompare() {
   ).join('');
 
   $(MAIN).innerHTML = `
-    <h1 class="page-title">Compare deals</h1>
-    <p class="page-sub">Click any column header to sort · hover Success for rationale</p>
+    <h1 class="page-title">Deals</h1>
+    <p class="page-sub">Side-by-side matrix · click any column header to sort</p>
+    ${renderDealsSubNav('compare')}
     <div class="card compare-card">
       <div class="compare-wrap">
         <table class="compare-table compare-table-main" id="compareTable">
@@ -865,9 +1053,10 @@ function renderCompare() {
         compareSort.key = key;
         compareSort.asc = key === 'deal' || key === 'type' || key === 'motive' || key === 'outcome' || key === 'pay';
       }
-      renderCompare();
+      renderDealsCompare();
     });
   });
+  bindDealsSubNav();
 }
 
 function getDealSizeItems() {
@@ -1073,10 +1262,15 @@ function renderDealSizes() {
   if (dealSizesState.sub === 'values') return renderDealSizesValues();
   if (dealSizesState.sub === 'success-intro') return renderDealSizesSuccessIntro();
   if (dealSizesState.sub === 'success-rank') return renderDealSizesSuccessRank();
+  return renderDealsDrillsMenu();
+}
+
+function renderDealsDrillsMenu() {
   dealSizesState.sub = 'menu';
   $(MAIN).innerHTML = `
-    <h1 class="page-title">Deal drills</h1>
-    <p class="page-sub">Exam drills on deal values and success (acquirer vs acquiree) for all 9 case studies</p>
+    <h1 class="page-title">Deals</h1>
+    <p class="page-sub">Exam drills on deal values and success (acquirer vs acquiree)</p>
+    ${renderDealsSubNav('drills')}
     <div class="grid-2 sizes-menu-grid">
       <button type="button" class="tile" id="sizesRankBtn" role="listitem">
         <span class="tile-icon" aria-hidden="true">↕</span>
@@ -1113,6 +1307,7 @@ function renderDealSizes() {
       <p class="sizes-hint">Complete a rank or value drill and check your answers to unlock the value answer key here.</p>
     </div>`}
   `;
+  bindDealsSubNav();
   $('#sizesRankBtn').onclick = () => {
     dealSizesState.sub = 'rank';
     resetDealSizesRank();
@@ -1163,7 +1358,7 @@ function renderDealSizesSuccessIntro() {
   `;
   $('#sizesSuccessBack').onclick = () => {
     dealSizesState.sub = 'menu';
-    renderDealSizes();
+    renderDeals();
   };
   $('#sizesSuccessStart').onclick = () => {
     dealSizesState.sub = 'success-rank';
@@ -1330,7 +1525,7 @@ function renderDealSizesRank() {
 
   $('#sizesRankBack').onclick = () => {
     dealSizesState.sub = 'menu';
-    renderDealSizes();
+    renderDeals();
   };
   $('#sizesRankShuffle').onclick = () => {
     resetDealSizesRank();
@@ -1393,7 +1588,7 @@ function renderDealSizesValues() {
     `;
     $('#sizesValBack').onclick = () => {
       dealSizesState.sub = 'menu';
-      renderDealSizes();
+      renderDeals();
     };
     $('#sizesValRetry').onclick = () => {
       resetDealSizesValues();
@@ -1444,7 +1639,7 @@ function renderDealSizesValues() {
   $('#sizesValBack').onclick = () => {
     dealSizesState.sub = 'menu';
     dealSizesState.valueFeedback = null;
-    renderDealSizes();
+    renderDeals();
   };
 
   $('#sizesValSubmit')?.addEventListener('click', () => {

@@ -21,72 +21,12 @@ function renderExamPrep() {
   if (sub === 'concepts') return renderConceptIndex();
   if (sub === 'short-answer') return renderShortAnswerSession();
   if (sub === 'short-answer-done') return renderShortAnswerDone();
-  examPrepState.sub = 'menu';
   renderExamPrepMenu();
 }
 
 function renderExamPrepMenu() {
-  $(MAIN).innerHTML = `
-    <h1 class="page-title">Exam prep</h1>
-    <p class="page-sub">Theory drills (short answers + takeover toolkit) — mirrors the written part of the exam</p>
-    <div class="grid-2 sizes-menu-grid">
-      <button type="button" class="tile" id="epToolkitBtn" role="listitem">
-        <span class="tile-icon" aria-hidden="true">🛡</span>
-        <h4>Takeover toolkit</h4>
-        <p>${TAKEOVER_TERMS.length} terms · all pre-bid & post-bid defenses + buyer tactics</p>
-      </button>
-      <button type="button" class="tile" id="epToolkitQuizBtn" role="listitem">
-        <span class="tile-icon" aria-hidden="true">?</span>
-        <h4>Classify defenses</h4>
-        <p>Pre-bid, post-bid, or buyer tactic? · self-check quiz</p>
-      </button>
-      <button type="button" class="tile" id="epConceptsBtn" role="listitem">
-        <span class="tile-icon" aria-hidden="true">📋</span>
-        <h4>Concept index</h4>
-        <p>IM, escrow, ratchet, LBU, earn-out, tag/drag · across lectures</p>
-      </button>
-      <button type="button" class="tile" id="epShortAnswerBtn" role="listitem">
-        <span class="tile-icon" aria-hidden="true">✎</span>
-        <h4>Short answers</h4>
-        <p>${SHORT_ANSWER_SESSION_SIZE} questions · write 2–3 lines · model answer reveal</p>
-      </button>
-    </div>
-    <div class="card">
-      <h3>Deals part of the exam</h3>
-      <p class="sizes-hint" style="margin-bottom:12px">Ranking and values are in <strong>Deal drills</strong> (sidebar).</p>
-      <div class="btn-row">
-        <button type="button" class="btn btn-primary" data-go="deal-sizes">Open deal drills →</button>
-      </div>
-    </div>
-  `;
-  $('#epToolkitBtn').onclick = () => {
-    examPrepState.sub = 'toolkit';
-    examPrepState.toolkitMode = 'browse';
-    renderTakeoverToolkit();
-  };
-  $('#epToolkitQuizBtn').onclick = () => {
-    examPrepState.sub = 'toolkit-quiz';
-    examPrepState.tkQuizDeck = shuffle([...TAKEOVER_TERMS]);
-    examPrepState.tkQuizIdx = 0;
-    examPrepState.tkQuizScore = 0;
-    examPrepState.tkQuizAnswered = false;
-    examPrepState.tkQuizLogged = false;
-    renderTakeoverToolkitQuiz();
-  };
-  $('#epConceptsBtn').onclick = () => {
-    examPrepState.sub = 'concepts';
-    renderConceptIndex();
-  };
-  $('#epShortAnswerBtn').onclick = () => {
-    const pool = shuffle([...SHORT_ANSWER_QUESTIONS]);
-    examPrepState.saDeck = pool.slice(0, SHORT_ANSWER_SESSION_SIZE);
-    examPrepState.saIdx = 0;
-    examPrepState.saRevealed = false;
-    examPrepState.saLogged = false;
-    examPrepState.sub = 'short-answer';
-    renderShortAnswerSession();
-  };
-  $('[data-go="deal-sizes"]')?.addEventListener('click', () => navigate('deal-sizes'));
+  examPrepState.sub = 'menu';
+  renderLectureTheory();
 }
 
 function toolkitPhaseBadge(phase) {
