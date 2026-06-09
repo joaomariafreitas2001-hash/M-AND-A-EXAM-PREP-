@@ -1033,6 +1033,40 @@ body {
   color: var(--muted);
   margin-top: 6px;
 }
+.sizes-success-intro h3 { margin-bottom: 12px; color: var(--accent-text); }
+.sizes-scale-note {
+  font-size: 0.9rem;
+  color: var(--text-body);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+.sizes-extreme {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.sizes-extreme-best {
+  background: var(--ok-bg);
+  border: 1px solid rgba(21, 128, 61, 0.2);
+}
+.sizes-extreme-worst {
+  background: var(--bad-bg);
+  border: 1px solid rgba(185, 28, 28, 0.15);
+}
+.sizes-extreme-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.sizes-extreme-deal {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
 
 @media (max-width: 720px) {
   .app { flex-direction: column; }

@@ -6,7 +6,17 @@ let currentView = 'home';
 let quizState = {};
 let flashState = { deck: [], idx: 0, flipped: false };
 let compareSort = { key: 'yearSort', asc: false };
-let dealSizesState = { sub: 'menu', rankOrder: [], rankResult: null, valueDeck: [], valueIdx: 0, valueScore: 0, valueFeedback: null };
+let dealSizesState = {
+  sub: 'menu',
+  rankOrder: [],
+  rankResult: null,
+  successRankOrder: [],
+  successRankResult: null,
+  valueDeck: [],
+  valueIdx: 0,
+  valueScore: 0,
+  valueFeedback: null,
+};
 const DEAL_SIZE_TOLERANCE = 1;
 const LS_FLASH = 'madeals_flash_v1';
 const LS_STATS = 'madeals_quiz_stats_v1';
@@ -759,18 +769,113 @@ function resetDealSizesValues() {
   dealSizesState.valueFeedback = null;
 }
 
+function getDealSuccessItems() {
+  return COMPARE_ROWS.map((row, id) => ({
+    id,
+    deal: row.deal,
+    success: row.success,
+    successScore: row.successScore,
+  }));
+}
+
+function dealSuccessById(id) {
+  return getDealSuccessItems().find((d) => d.id === id);
+}
+
+function dealSuccessCorrectOrder() {
+  return [...getDealSuccessItems()]
+    .sort((a, b) => b.successScore - a.successScore || a.deal.localeCompare(b.deal))
+    .map((d) => d.id);
+}
+
+function getSuccessExtremes() {
+  const items = getDealSuccessItems();
+  const max = Math.max(...items.map((i) => i.successScore));
+  const min = Math.min(...items.map((i) => i.successScore));
+  return {
+    most: items.filter((i) => i.successScore === max),
+    least: items.filter((i) => i.successScore === min),
+  };
+}
+
+function resetDealSizesSuccessRank() {
+  const ids = getDealSuccessItems().map((d) => d.id);
+  dealSizesState.successRankOrder = shuffle(ids);
+  dealSizesState.successRankResult = null;
+}
+
+function bindDealRankListHandlers({ listEl, getOrder, setOrder, clearResult, render }) {
+  $$('.deal-rank-item', listEl).forEach((item) => {
+    item.addEventListener('dragstart', (e) => {
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.dataset.id);
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+  });
+  listEl.addEventListener('dragover', (e) => e.preventDefault());
+  listEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const dragId = +e.dataTransfer.getData('text/plain');
+    const target = e.target.closest('.deal-rank-item');
+    if (!target || target.dataset.id === String(dragId)) return;
+    const ids = $$('.deal-rank-item', listEl).map((el) => +el.dataset.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(+target.dataset.id);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, dragId);
+    setOrder(ids);
+    clearResult();
+    render();
+  });
+  $$('.deal-rank-up').forEach((btn) => {
+    btn.onclick = () => {
+      const id = +btn.dataset.id;
+      const order = getOrder();
+      const idx = order.indexOf(id);
+      if (idx <= 0) return;
+      const arr = [...order];
+      [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+      setOrder(arr);
+      clearResult();
+      render();
+    };
+  });
+  $$('.deal-rank-down').forEach((btn) => {
+    btn.onclick = () => {
+      const id = +btn.dataset.id;
+      const order = getOrder();
+      const idx = order.indexOf(id);
+      if (idx < 0 || idx >= order.length - 1) return;
+      const arr = [...order];
+      [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+      setOrder(arr);
+      clearResult();
+      render();
+    };
+  });
+}
+
 function renderDealSizes() {
   if (dealSizesState.sub === 'rank') return renderDealSizesRank();
   if (dealSizesState.sub === 'values') return renderDealSizesValues();
+  if (dealSizesState.sub === 'success-intro') return renderDealSizesSuccessIntro();
+  if (dealSizesState.sub === 'success-rank') return renderDealSizesSuccessRank();
   dealSizesState.sub = 'menu';
   $(MAIN).innerHTML = `
     <h1 class="page-title">Deal sizes</h1>
-    <p class="page-sub">Exam-style drills on acquisition values for all 9 case deals</p>
+    <p class="page-sub">Exam drills on deal values and acquirer success for all 9 case studies</p>
     <div class="grid-2 sizes-menu-grid">
       <button type="button" class="tile" id="sizesRankBtn" role="listitem">
         <span class="tile-icon" aria-hidden="true">↕</span>
         <h4>Rank largest → smallest</h4>
         <p>Reorder all 9 deals by total acquisition value. Values hidden until you check.</p>
+      </button>
+      <button type="button" class="tile" id="sizesSuccessBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">★</span>
+        <h4>Rank by success</h4>
+        <p>See best and worst outcomes, then sort most → least successful for the acquirer.</p>
       </button>
       <button type="button" class="tile" id="sizesValueBtn" role="listitem">
         <span class="tile-icon" aria-hidden="true">#</span>
@@ -793,10 +898,132 @@ function renderDealSizes() {
     resetDealSizesRank();
     renderDealSizesRank();
   };
+  $('#sizesSuccessBtn').onclick = () => {
+    dealSizesState.sub = 'success-intro';
+    renderDealSizesSuccessIntro();
+  };
   $('#sizesValueBtn').onclick = () => {
     dealSizesState.sub = 'values';
     resetDealSizesValues();
     renderDealSizesValues();
+  };
+}
+
+function renderDealSizesSuccessIntro() {
+  const { most, least } = getSuccessExtremes();
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Rank by success</h1>
+    <p class="page-sub">Course verdict for the acquirer · most successful at the top</p>
+    <div class="card sizes-success-intro">
+      <h3>Before you sort</h3>
+      <p class="sizes-scale-note">Scale (high → low): <strong>Exceptional</strong> · <strong>Strong</strong> · <strong>Moderate</strong> · <strong>Mixed</strong></p>
+      <div class="sizes-extreme sizes-extreme-best">
+        <span class="sizes-extreme-label">Most successful</span>
+        ${most.map((d) => `<p class="sizes-extreme-deal"><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.success)}</span></p>`).join('')}
+      </div>
+      <div class="sizes-extreme sizes-extreme-worst">
+        <span class="sizes-extreme-label">Least successful</span>
+        ${least.map((d) => `<p class="sizes-extreme-deal"><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.success)}</span></p>`).join('')}
+      </div>
+      <p class="sizes-hint">Ratings stay hidden during the sort. Deals tied on the same tier can be in any order within that tier.</p>
+      <div class="btn-row" style="margin-top:20px">
+        <button type="button" class="btn btn-secondary" id="sizesSuccessBack">Back</button>
+        <button type="button" class="btn btn-primary" id="sizesSuccessStart">Start sorting</button>
+      </div>
+    </div>
+  `;
+  $('#sizesSuccessBack').onclick = () => {
+    dealSizesState.sub = 'menu';
+    renderDealSizes();
+  };
+  $('#sizesSuccessStart').onclick = () => {
+    dealSizesState.sub = 'success-rank';
+    resetDealSizesSuccessRank();
+    renderDealSizesSuccessRank();
+  };
+}
+
+function renderDealSizesSuccessRank() {
+  const order = dealSizesState.successRankOrder;
+  const result = dealSizesState.successRankResult;
+  const correct = dealSuccessCorrectOrder();
+  const byId = Object.fromEntries(getDealSuccessItems().map((d) => [d.id, d]));
+  const expectedScores = correct.map((id) => byId[id].successScore);
+
+  let resultHtml = '';
+  if (result) {
+    const perfect = result.wrongPositions.length === 0;
+    resultHtml = `
+      <div class="card sizes-result ${perfect ? 'sizes-result-ok' : 'sizes-result-bad'}">
+        <h3>${perfect ? 'Perfect order' : `${result.correctCount} / 9 in the right success tier`}</h3>
+        ${perfect ? '<p>All deals ranked correctly for the acquirer.</p>' : '<p>Red rows are in the wrong success tier. Correct order below.</p>'}
+        <ol class="sizes-ref-list">
+          ${correct.map((id) => {
+            const d = dealSuccessById(id);
+            return `<li><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.success)}</span></li>`;
+          }).join('')}
+        </ol>
+      </div>`;
+  }
+
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Sort by success</h1>
+    <p class="page-sub">Most successful for the acquirer at the top · drag or use arrows</p>
+    <div class="card">
+      <ol class="deal-rank-list" id="dealSuccessRankList">
+        ${order.map((id, pos) => {
+          const d = dealSuccessById(id);
+          const wrong = result && result.wrongPositions.includes(pos);
+          return `
+          <li class="deal-rank-item${wrong ? ' deal-rank-wrong' : ''}" data-id="${id}" draggable="true">
+            <span class="deal-rank-grip" aria-hidden="true">⋮⋮</span>
+            <span class="deal-rank-pos">${pos + 1}</span>
+            <span class="deal-rank-name">${escHtml(d.deal)}</span>
+            <span class="deal-rank-actions">
+              <button type="button" class="btn btn-secondary btn-sm deal-rank-up" data-id="${id}" aria-label="Move ${escHtml(d.deal)} up">↑</button>
+              <button type="button" class="btn btn-secondary btn-sm deal-rank-down" data-id="${id}" aria-label="Move ${escHtml(d.deal)} down">↓</button>
+            </span>
+          </li>`;
+        }).join('')}
+      </ol>
+      <div class="btn-row" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" id="sizesSuccessRankBack">Back</button>
+        <button type="button" class="btn btn-secondary" id="sizesSuccessRankShuffle">Shuffle</button>
+        <button type="button" class="btn btn-primary" id="sizesSuccessRankCheck">Check order</button>
+      </div>
+    </div>
+    ${resultHtml}
+  `;
+
+  const list = $('#dealSuccessRankList');
+  bindDealRankListHandlers({
+    listEl: list,
+    getOrder: () => dealSizesState.successRankOrder,
+    setOrder: (ids) => { dealSizesState.successRankOrder = ids; },
+    clearResult: () => { dealSizesState.successRankResult = null; },
+    render: renderDealSizesSuccessRank,
+  });
+
+  $('#sizesSuccessRankBack').onclick = () => {
+    dealSizesState.sub = 'success-intro';
+    renderDealSizesSuccessIntro();
+  };
+  $('#sizesSuccessRankShuffle').onclick = () => {
+    resetDealSizesSuccessRank();
+    renderDealSizesSuccessRank();
+  };
+  $('#sizesSuccessRankCheck').onclick = () => {
+    const userOrder = $$('.deal-rank-item', list).map((el) => +el.dataset.id);
+    dealSizesState.successRankOrder = userOrder;
+    const userScores = userOrder.map((id) => byId[id].successScore);
+    const wrongPositions = userScores
+      .map((s, i) => (s !== expectedScores[i] ? i : -1))
+      .filter((i) => i >= 0);
+    dealSizesState.successRankResult = {
+      correctCount: 9 - wrongPositions.length,
+      wrongPositions,
+    };
+    renderDealSizesSuccessRank();
   };
 }
 
@@ -852,54 +1079,12 @@ function renderDealSizesRank() {
   `;
 
   const list = $('#dealRankList');
-  $$('.deal-rank-item').forEach((item) => {
-    item.addEventListener('dragstart', (e) => {
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', item.dataset.id);
-    });
-    item.addEventListener('dragend', () => item.classList.remove('dragging'));
-  });
-  list.addEventListener('dragover', (e) => e.preventDefault());
-  list.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const dragId = +e.dataTransfer.getData('text/plain');
-    const target = e.target.closest('.deal-rank-item');
-    if (!target || target.dataset.id === String(dragId)) return;
-    const ids = $$('.deal-rank-item').map((el) => +el.dataset.id);
-    const from = ids.indexOf(dragId);
-    const to = ids.indexOf(+target.dataset.id);
-    if (from < 0 || to < 0) return;
-    ids.splice(from, 1);
-    ids.splice(to, 0, dragId);
-    dealSizesState.rankOrder = ids;
-    dealSizesState.rankResult = null;
-    renderDealSizesRank();
-  });
-
-  $$('.deal-rank-up').forEach((btn) => {
-    btn.onclick = () => {
-      const id = +btn.dataset.id;
-      const idx = dealSizesState.rankOrder.indexOf(id);
-      if (idx <= 0) return;
-      const arr = [...dealSizesState.rankOrder];
-      [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
-      dealSizesState.rankOrder = arr;
-      dealSizesState.rankResult = null;
-      renderDealSizesRank();
-    };
-  });
-  $$('.deal-rank-down').forEach((btn) => {
-    btn.onclick = () => {
-      const id = +btn.dataset.id;
-      const idx = dealSizesState.rankOrder.indexOf(id);
-      if (idx < 0 || idx >= dealSizesState.rankOrder.length - 1) return;
-      const arr = [...dealSizesState.rankOrder];
-      [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
-      dealSizesState.rankOrder = arr;
-      dealSizesState.rankResult = null;
-      renderDealSizesRank();
-    };
+  bindDealRankListHandlers({
+    listEl: list,
+    getOrder: () => dealSizesState.rankOrder,
+    setOrder: (ids) => { dealSizesState.rankOrder = ids; },
+    clearResult: () => { dealSizesState.rankResult = null; },
+    render: renderDealSizesRank,
   });
 
   $('#sizesRankBack').onclick = () => {
