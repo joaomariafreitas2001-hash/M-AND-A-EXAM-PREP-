@@ -841,6 +841,44 @@ function resetDealSizesSuccessRank() {
   dealSizesState.successRankResult = null;
 }
 
+function renderSuccessOrderRationale(perspective) {
+  const cfg = SUCCESS_PERSPECTIVES[perspective];
+  const ratingKey = perspective === 'acquirer' ? 'successAcquirer' : 'successAcquiree';
+  const noteKey = perspective === 'acquirer' ? 'successAcquirerNote' : 'successAcquireeNote';
+  const order = dealSuccessCorrectOrder(perspective);
+  const items = order.map((id, i) => {
+    const row = COMPARE_ROWS[id];
+    return {
+      rank: i + 1,
+      deal: row.deal,
+      rating: row[ratingKey],
+      note: row[noteKey],
+    };
+  });
+
+  return `
+    <div class="card success-rationale-card">
+      <h3>Course order on this site (${escHtml(cfg.label)})</h3>
+      <p class="sizes-hint">This is the ranking we use when you check your sort. Tiers run <strong>Exceptional → Strong → Moderate → Mixed</strong>. Deals in the same tier can be in any order.</p>
+      <ol class="success-rationale-list">
+        ${items.map((item) => `
+          <li class="success-rationale-item">
+            <span class="success-rationale-rank">${item.rank}</span>
+            <div class="success-rationale-body">
+              <div class="success-rationale-head">
+                <strong>${escHtml(item.deal)}</strong>
+                <span class="sizes-ref-val">${escHtml(item.rating)}</span>
+              </div>
+              <p class="success-rationale-note">${escHtml(item.note)}</p>
+            </div>
+          </li>
+        `).join('')}
+      </ol>
+      <p class="sizes-hint success-rationale-footer">Verdicts follow the ESADE case notes: did the ${escHtml(cfg.sublabel)} create or destroy value, meet strategic goals, and avoid hubris or a messy process — not headline deal size.</p>
+    </div>
+  `;
+}
+
 function bindDealRankListHandlers({ listEl, getOrder, setOrder, clearResult, render }) {
   $$('.deal-rank-item', listEl).forEach((item) => {
     item.addEventListener('dragstart', (e) => {
@@ -979,11 +1017,12 @@ function renderDealSizesSuccessIntro() {
         <span class="sizes-extreme-label">Least successful</span>
         ${least.map((d) => `<p class="sizes-extreme-deal"><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.success)}</span></p>`).join('')}
       </div>
-      <p class="sizes-hint">Ratings stay hidden during the sort. Deals tied on the same tier can be in any order within that tier.</p>
-      <div class="btn-row" style="margin-top:20px">
-        <button type="button" class="btn btn-secondary" id="sizesSuccessBack">Back</button>
-        <button type="button" class="btn btn-primary" id="sizesSuccessStart">Start sorting</button>
-      </div>
+      <p class="sizes-hint">Ratings stay hidden during the sort. Study the full order below before you start.</p>
+    </div>
+    ${renderSuccessOrderRationale(perspective)}
+    <div class="btn-row" style="margin-top:16px;margin-bottom:24px">
+      <button type="button" class="btn btn-secondary" id="sizesSuccessBack">Back</button>
+      <button type="button" class="btn btn-primary" id="sizesSuccessStart">Start sorting</button>
     </div>
   `;
   $('#sizesSuccessBack').onclick = () => {

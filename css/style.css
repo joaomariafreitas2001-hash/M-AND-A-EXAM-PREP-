@@ -1138,6 +1138,54 @@ body {
 }
 .sa-model h4 { font-size: 0.95rem; color: var(--accent-text); margin-bottom: 8px; }
 
+.success-rationale-card { margin-top: 16px; }
+.success-rationale-card h3 {
+  font-size: 1rem;
+  color: var(--accent-text);
+  margin-bottom: 10px;
+}
+.success-rationale-list {
+  list-style: none;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.success-rationale-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.success-rationale-rank {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.success-rationale-body { flex: 1; min-width: 0; }
+.success-rationale-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.success-rationale-note {
+  font-size: 0.88rem;
+  color: var(--text-body);
+  line-height: 1.55;
+  margin: 0;
+}
+.success-rationale-footer { margin-top: 16px; }
+
 @media (max-width: 720px) {
   .app { flex-direction: column; }
   .sidebar {
