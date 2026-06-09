@@ -974,7 +974,7 @@ function renderDealSizesValues() {
     <div class="card sizes-value-card">
       <p class="sizes-deal-prompt">${escHtml(d.deal)}</p>
       <label class="telemetry-label" for="dealValueInput">Acquisition value (${curSym} billions)</label>
-      <input type="number" id="dealValueInput" class="telemetry-input deal-value-input" inputmode="decimal" step="0.1" min="0" placeholder="e.g. ${d.valueSort}" ${fb ? 'disabled' : ''} />
+      <input type="number" id="dealValueInput" class="telemetry-input deal-value-input" inputmode="decimal" step="0.1" min="0" placeholder="00" ${fb ? 'disabled' : ''} />
       <p class="sizes-hint">Enter the number only · ±${DEAL_SIZE_TOLERANCE} billion counts as correct</p>
       ${feedbackHtml}
       <div class="btn-row" style="margin-top:16px">
