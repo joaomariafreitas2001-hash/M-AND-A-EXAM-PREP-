@@ -6,6 +6,7 @@ let currentView = 'home';
 let quizState = {};
 let flashState = { deck: [], idx: 0, flipped: false };
 let compareSort = { key: 'yearSort', asc: false };
+let studyDealTab = 1;
 let dealSizesState = {
   sub: 'menu',
   rankOrder: [],
@@ -579,13 +580,10 @@ function renderHome() {
   $$('[data-go]').forEach((el) => el.addEventListener('click', () => navigate(el.dataset.go)));
   $('[data-go="history"]')?.addEventListener('click', () => navigate('history'));
   $$('[data-deal]').forEach((el) => el.addEventListener('click', () => {
+    openStudyDealTab(+el.dataset.deal);
     navigate('study');
     setTimeout(() => {
-      const det = document.querySelector(`[data-deal-id="${el.dataset.deal}"]`);
-      if (det) {
-        det.open = true;
-        det.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      document.querySelector('.deal-resumo-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
   }));
   $$('[data-lecture]').forEach((el) => el.addEventListener('click', () => {
@@ -598,6 +596,126 @@ function renderHome() {
       }
     }, 50);
   }));
+}
+
+function dealResumoVerdictClass(verdict) {
+  if (verdict === 'ok') return 'resumo-v-ok';
+  if (verdict === 'fail') return 'resumo-v-fail';
+  return 'resumo-v-mix';
+}
+
+function dealResumoBadgeClass(verdict) {
+  if (verdict === 'ok') return 'resumo-badge-ok';
+  if (verdict === 'fail') return 'resumo-badge-fail';
+  return 'resumo-badge-mix';
+}
+
+function dealResumoDotClass(dot) {
+  if (dot === 'accepted') return 'resumo-dot-accepted';
+  if (dot === 'close') return 'resumo-dot-close';
+  return 'resumo-dot-rejected';
+}
+
+function renderDealResumoCard(dealId) {
+  const deal = STUDY_DEALS.find((d) => d.id === dealId);
+  const resumo = DEAL_RESUMOS[dealId];
+  if (!deal || !resumo) return '';
+
+  const structHtml = resumo.struct.map(([k, v]) => `
+    <div class="resumo-kv">
+      <span class="resumo-kv-k">${escHtml(k)}</span>
+      <span class="resumo-kv-v">${escHtml(v)}</span>
+    </div>`).join('');
+
+  const roundsHtml = resumo.rounds.map((r) => `
+    <div class="resumo-round">
+      <span class="resumo-dot ${dealResumoDotClass(r.dot)}" aria-hidden="true"></span>
+      <span>${escHtml(r.text)}</span>
+    </div>`).join('');
+
+  const trapsHtml = resumo.traps.map((t) => `<li>${escHtml(t)}</li>`).join('');
+
+  return `
+    <div class="resumo-card${studyDealTab === dealId ? ' active' : ''}" id="resumo-card-${dealId}" role="tabpanel" aria-labelledby="resumo-tab-${dealId}"${studyDealTab === dealId ? '' : ' hidden'}>
+      <div class="resumo-card-header">
+        <div class="resumo-deal-title">${escHtml(deal.title)}</div>
+        <div class="resumo-deal-sub">${escHtml(deal.value)} · ${escHtml(String(deal.year))} · closed ${escHtml(deal.closed)}</div>
+        <div class="resumo-badges">
+          <span class="resumo-badge resumo-badge-type">${escHtml(resumo.typeLabel)}</span>
+          <span class="resumo-badge ${dealResumoBadgeClass(resumo.verdict)}">${escHtml(resumo.verdictLabel)}</span>
+        </div>
+      </div>
+      <div class="resumo-grid">
+        <div class="resumo-section">
+          <div class="resumo-sec-label">Deal structure</div>
+          ${structHtml}
+        </div>
+        <div class="resumo-section">
+          <div class="resumo-sec-label">Process rounds</div>
+          ${roundsHtml}
+        </div>
+        <div class="resumo-section">
+          <div class="resumo-sec-label">Acquirer motivations</div>
+          <p class="resumo-sec-body">${escHtml(resumo.motivAcquirer)}</p>
+        </div>
+        <div class="resumo-section">
+          <div class="resumo-sec-label">Target motivations</div>
+          <p class="resumo-sec-body">${escHtml(resumo.motivTarget)}</p>
+        </div>
+        <div class="resumo-section resumo-section-full">
+          <div class="resumo-sec-label">Outcome — successes and failures</div>
+          <p class="resumo-sec-body">${escHtml(resumo.result)}</p>
+        </div>
+        <div class="resumo-section resumo-section-full">
+          <div class="resumo-sec-label">Exam traps</div>
+          <ul class="trap-list">${trapsHtml}</ul>
+        </div>
+      </div>
+      <div class="resumo-verdict-bar">
+        <span class="resumo-verdict-label">Course verdict (acquirer)</span>
+        <span class="${dealResumoVerdictClass(resumo.verdict)}">${escHtml(resumo.verdictLabel)}</span>
+      </div>
+    </div>`;
+}
+
+function renderDealResumoTabs() {
+  const tabsHtml = DEAL_RESUMO_ORDER.map((id) => {
+    const resumo = DEAL_RESUMOS[id];
+    const active = studyDealTab === id;
+    return `<button type="button" class="resumo-tab${active ? ' active' : ''}" id="resumo-tab-${id}" role="tab" aria-selected="${active}" aria-controls="resumo-card-${id}" data-deal-tab="${id}">${escHtml(resumo.label)}</button>`;
+  }).join('');
+
+  const cardsHtml = DEAL_RESUMO_ORDER.map((id) => renderDealResumoCard(id)).join('');
+
+  return `
+    <div class="deal-resumo-wrap">
+      <p class="sizes-hint" style="margin-bottom:12px">Click a deal tab to open the full summary card.</p>
+      <div class="resumo-tabs" role="tablist" aria-label="Deal summaries">${tabsHtml}</div>
+      <div class="resumo-cards">${cardsHtml}</div>
+    </div>`;
+}
+
+function bindDealResumoTabs() {
+  $$('.resumo-tab').forEach((btn) => {
+    btn.onclick = () => {
+      studyDealTab = +btn.dataset.dealTab;
+      $$('.resumo-tab').forEach((b) => {
+        const on = +b.dataset.dealTab === studyDealTab;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      $$('.resumo-card').forEach((card) => {
+        const on = +card.id.replace('resumo-card-', '') === studyDealTab;
+        card.classList.toggle('active', on);
+        if (on) card.removeAttribute('hidden');
+        else card.setAttribute('hidden', '');
+      });
+    };
+  });
+}
+
+function openStudyDealTab(dealId) {
+  if (DEAL_RESUMOS[dealId]) studyDealTab = dealId;
 }
 
 function renderStudy() {
@@ -614,26 +732,6 @@ function renderStudy() {
     </details>`
   ).join('');
 
-  const dealsHtml = STUDY_DEALS.map(
-    (d) => `
-    <details class="study-session" data-deal-id="${d.id}">
-      <summary>${d.id}. ${d.title} <span style="font-weight:400;color:var(--muted);font-size:0.85rem"> -  ${d.value}</span></summary>
-      <div class="study-body">
-        <div class="deal-meta">
-          <span class="deal-badge">${d.year}</span>
-          <span class="deal-badge">${d.dealType}</span>
-          <span class="deal-badge">${d.consideration}</span>
-          <span class="deal-badge">Premium: ${d.premium}</span>
-          <span class="deal-badge">${d.sector}</span>
-        </div>
-        <p>${d.summary}</p>
-        ${d.sections.map((sec) => `<h4>${sec.h}</h4>${sec.html}`).join('')}
-        <h4>Exam traps</h4>
-        <ul class="trap-list">${d.traps.map((t) => `<li>${t}</li>`).join('')}</ul>
-      </div>
-    </details>`
-  ).join('');
-
   const formulaHtml = EXAM_FRAMEWORK.map(
     (f) => `<div class="formula-row"><span>${f.topic}</span><code>${f.formula}</code></div>`
   ).join('');
@@ -643,13 +741,14 @@ function renderStudy() {
     <p class="page-sub">From MA  -  Full Course Revision + 9 deal case studies</p>
     <h2 style="font-size:1.1rem;margin:24px 0 12px;color:var(--accent-text)">Part I  -  Lectures</h2>
     ${lecturesHtml}
-    <h2 style="font-size:1.1rem;margin:28px 0 12px;color:var(--accent-text)">Part II  -  Deal case studies</h2>
-    ${dealsHtml}
+    <h2 style="font-size:1.1rem;margin:28px 0 12px;color:var(--accent-text)">Part II  -  Deal case studies (${STUDY_DEALS.length} deals)</h2>
+    ${renderDealResumoTabs()}
     <div class="card" style="margin-top:20px">
       <h3>Exam frameworks & formulas</h3>
       <div class="formula-grid">${formulaHtml}</div>
     </div>
   `;
+  bindDealResumoTabs();
 }
 
 const COMPARE_COLUMNS = [
