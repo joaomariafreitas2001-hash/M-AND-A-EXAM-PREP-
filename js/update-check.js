@@ -1,6 +1,5 @@
-/* Poll version.json + nightly 22:00 Europe/Madrid reload prompt. */
+/* Poll version.json during an open session; nightly 22:00 Europe/Madrid reload. */
 const UPDATE_POLL_MS = 90_000;
-const LS_LOADED_BUILD = 'madeals_loaded_build_v1';
 const MADRID_TZ = 'Europe/Madrid';
 const NIGHTLY_HOUR = 22;
 const NIGHTLY_AUTO_RELOAD_MS = 4000;
@@ -60,26 +59,19 @@ function msUntilNextMadridHour(hour) {
   return 24 * 60 * 60 * 1000;
 }
 
-async function fetchRemoteBuild() {
+async function fetchVersionJson() {
   try {
     const res = await fetch(`/version.json?_=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return null;
-    const data = await res.json();
-    return data && data.version != null ? String(data.version) : null;
+    return await res.json();
   } catch {
     return null;
   }
 }
 
-async function fetchUpdateMessage() {
-  try {
-    const res = await fetch(`/version.json?_=${Date.now()}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.message || null;
-  } catch {
-    return null;
-  }
+async function fetchRemoteBuild() {
+  const data = await fetchVersionJson();
+  return data && data.version != null ? String(data.version) : null;
 }
 
 function showUpdateModal(message, autoReloadMs = 0) {
@@ -116,10 +108,7 @@ function showUpdateModal(message, autoReloadMs = 0) {
 function triggerNightlyReload() {
   if (sessionStorage.getItem(nightlyStorageKey())) return;
   sessionStorage.setItem(nightlyStorageKey(), '1');
-  showUpdateModal(
-    'New updates on the interface.',
-    NIGHTLY_AUTO_RELOAD_MS
-  );
+  showUpdateModal('New updates on the interface.', NIGHTLY_AUTO_RELOAD_MS);
 }
 
 function scheduleNightlyMadridReload() {
@@ -139,31 +128,28 @@ function startNightlyBackupCheck() {
   }, 30_000);
 }
 
-async function checkForUpdate() {
+async function checkForUpdate(isInitial) {
   const remote = await fetchRemoteBuild();
   if (!remote) return;
 
-  const stored = sessionStorage.getItem(LS_LOADED_BUILD);
-  if (loadedBuild === null && stored) loadedBuild = stored;
-
-  if (loadedBuild === null) {
+  if (isInitial || loadedBuild === null) {
     loadedBuild = remote;
-    sessionStorage.setItem(LS_LOADED_BUILD, loadedBuild);
     return;
   }
 
   if (remote !== loadedBuild && !updateModalShown) {
-    const message = (await fetchUpdateMessage()) || 'New updates on the interface. Reload to get the latest version.';
+    const data = await fetchVersionJson();
+    const message = (data && data.message) || 'New updates on the interface. Reload to get the latest version.';
     showUpdateModal(message);
   }
 }
 
 function initUpdateCheck() {
-  checkForUpdate();
+  checkForUpdate(true);
   if (updatePollTimer) clearInterval(updatePollTimer);
-  updatePollTimer = setInterval(checkForUpdate, UPDATE_POLL_MS);
+  updatePollTimer = setInterval(() => checkForUpdate(false), UPDATE_POLL_MS);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') checkForUpdate();
+    if (document.visibilityState === 'visible') checkForUpdate(false);
   });
 
   scheduleNightlyMadridReload();
