@@ -29,10 +29,6 @@ const LATEST_UPDATES = [
     actionLabel: 'Try Success · acquirer drill',
   },
   {
-    title: 'Drill logging in Google Sheet',
-    text: 'Deal drills and exam prep sessions now log to the same Sheet as MCQ practice (new Drill column).',
-  },
-  {
     title: 'Reload fix',
     text: 'Home loads immediately on refresh. The name prompt overlays the page instead of leaving a blank screen.',
   },
