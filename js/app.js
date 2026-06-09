@@ -6,6 +6,8 @@ let currentView = 'home';
 let quizState = {};
 let flashState = { deck: [], idx: 0, flipped: false };
 let compareSort = { key: 'yearSort', asc: false };
+let dealSizesState = { sub: 'menu', rankOrder: [], rankResult: null, valueDeck: [], valueIdx: 0, valueScore: 0, valueFeedback: null };
+const DEAL_SIZE_TOLERANCE = 1;
 const LS_FLASH = 'madeals_flash_v1';
 const LS_STATS = 'madeals_quiz_stats_v1';
 const LS_HISTORY = 'madeals_quiz_history_v1';
@@ -18,6 +20,7 @@ const PAGE_TITLES = {
   home: 'Home',
   study: 'Study hub',
   compare: 'Compare deals',
+  'deal-sizes': 'Deal sizes',
   practice: 'Practice MCQ',
   flashcards: 'Flashcards',
   history: 'Quiz history',
@@ -446,6 +449,7 @@ function navigate(view) {
     home: renderHome,
     study: renderStudy,
     compare: renderCompare,
+    'deal-sizes': renderDealSizes,
     practice: renderPracticeSetup,
     flashcards: renderFlashcards,
     history: renderHistory,
@@ -480,6 +484,7 @@ function renderHome() {
     <div class="grid-2" role="list">
       <button type="button" class="tile" data-go="study" role="listitem"><span class="tile-icon" aria-hidden="true">📖</span><h4>Study hub</h4><p>Lectures L1–L8 + 9 deal case notes</p></button>
       <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix  -  value, type, motive</p></button>
+      <button type="button" class="tile" data-go="deal-sizes" role="listitem"><span class="tile-icon" aria-hidden="true">↕</span><h4>Deal sizes</h4><p>Rank by value · type billions</p></button>
       <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} in bank · 10, 15, 20, or 40 per session</p></button>
       <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${FLASHCARDS.length} cards · spaced repeat</p></button>
     </div>
@@ -712,6 +717,309 @@ function renderCompare() {
       }
       renderCompare();
     });
+  });
+}
+
+function getDealSizeItems() {
+  return COMPARE_ROWS.map((row, id) => ({
+    id,
+    deal: row.deal,
+    valueSort: row.valueSort,
+    valueLabel: row.value,
+    currency: String(row.value).includes('€') ? '€' : '$',
+  }));
+}
+
+function dealSizeCorrectOrder() {
+  return [...getDealSizeItems()]
+    .sort((a, b) => b.valueSort - a.valueSort)
+    .map((d) => d.id);
+}
+
+function dealSizeById(id) {
+  return getDealSizeItems().find((d) => d.id === id);
+}
+
+function isDealValueCorrect(entered, actual) {
+  if (entered === null || Number.isNaN(entered)) return false;
+  return Math.abs(entered - actual) <= DEAL_SIZE_TOLERANCE;
+}
+
+function resetDealSizesRank() {
+  const ids = getDealSizeItems().map((d) => d.id);
+  dealSizesState.rankOrder = shuffle(ids);
+  dealSizesState.rankResult = null;
+}
+
+function resetDealSizesValues() {
+  const ids = getDealSizeItems().map((d) => d.id);
+  dealSizesState.valueDeck = shuffle(ids);
+  dealSizesState.valueIdx = 0;
+  dealSizesState.valueScore = 0;
+  dealSizesState.valueFeedback = null;
+}
+
+function renderDealSizes() {
+  if (dealSizesState.sub === 'rank') return renderDealSizesRank();
+  if (dealSizesState.sub === 'values') return renderDealSizesValues();
+  dealSizesState.sub = 'menu';
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Deal sizes</h1>
+    <p class="page-sub">Exam-style drills on acquisition values for all 9 case deals</p>
+    <div class="grid-2 sizes-menu-grid">
+      <button type="button" class="tile" id="sizesRankBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">↕</span>
+        <h4>Rank largest → smallest</h4>
+        <p>Reorder all 9 deals by total acquisition value. Values hidden until you check.</p>
+      </button>
+      <button type="button" class="tile" id="sizesValueBtn" role="listitem">
+        <span class="tile-icon" aria-hidden="true">#</span>
+        <h4>Type the value</h4>
+        <p>Name shown · enter billions in the box · ±1bn counts as correct</p>
+      </button>
+    </div>
+    <div class="card">
+      <h3>Reference order (largest first)</h3>
+      <ol class="sizes-ref-list">
+        ${dealSizeCorrectOrder().map((id) => {
+          const d = dealSizeById(id);
+          return `<li><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.valueLabel)}</span></li>`;
+        }).join('')}
+      </ol>
+    </div>
+  `;
+  $('#sizesRankBtn').onclick = () => {
+    dealSizesState.sub = 'rank';
+    resetDealSizesRank();
+    renderDealSizesRank();
+  };
+  $('#sizesValueBtn').onclick = () => {
+    dealSizesState.sub = 'values';
+    resetDealSizesValues();
+    renderDealSizesValues();
+  };
+}
+
+function renderDealSizesRank() {
+  const items = getDealSizeItems();
+  const order = dealSizesState.rankOrder;
+  const result = dealSizesState.rankResult;
+  const correct = dealSizeCorrectOrder();
+
+  let resultHtml = '';
+  if (result) {
+    const perfect = result.wrongPositions.length === 0;
+    resultHtml = `
+      <div class="card sizes-result ${perfect ? 'sizes-result-ok' : 'sizes-result-bad'}">
+        <h3>${perfect ? 'Perfect order' : `${result.correctCount} / 9 in the right place`}</h3>
+        ${perfect ? '<p>All deals ranked correctly.</p>' : `<p>Positions marked in red are wrong. Correct order below.</p>`}
+        <ol class="sizes-ref-list">
+          ${correct.map((id) => {
+            const d = dealSizeById(id);
+            return `<li><strong>${escHtml(d.deal)}</strong> <span class="sizes-ref-val">${escHtml(d.valueLabel)}</span></li>`;
+          }).join('')}
+        </ol>
+      </div>`;
+  }
+
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Rank by value</h1>
+    <p class="page-sub">Drag rows or use arrows · largest at the top</p>
+    <div class="card">
+      <ol class="deal-rank-list" id="dealRankList">
+        ${order.map((id, pos) => {
+          const d = dealSizeById(id);
+          const wrong = result && result.wrongPositions.includes(pos);
+          return `
+          <li class="deal-rank-item${wrong ? ' deal-rank-wrong' : ''}" data-id="${id}" draggable="true">
+            <span class="deal-rank-grip" aria-hidden="true">⋮⋮</span>
+            <span class="deal-rank-pos">${pos + 1}</span>
+            <span class="deal-rank-name">${escHtml(d.deal)}</span>
+            <span class="deal-rank-actions">
+              <button type="button" class="btn btn-secondary btn-sm deal-rank-up" data-id="${id}" aria-label="Move ${escHtml(d.deal)} up">↑</button>
+              <button type="button" class="btn btn-secondary btn-sm deal-rank-down" data-id="${id}" aria-label="Move ${escHtml(d.deal)} down">↓</button>
+            </span>
+          </li>`;
+        }).join('')}
+      </ol>
+      <div class="btn-row" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" id="sizesRankBack">Back</button>
+        <button type="button" class="btn btn-secondary" id="sizesRankShuffle">Shuffle</button>
+        <button type="button" class="btn btn-primary" id="sizesRankCheck">Check order</button>
+      </div>
+    </div>
+    ${resultHtml}
+  `;
+
+  const list = $('#dealRankList');
+  $$('.deal-rank-item').forEach((item) => {
+    item.addEventListener('dragstart', (e) => {
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.dataset.id);
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+  });
+  list.addEventListener('dragover', (e) => e.preventDefault());
+  list.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const dragId = +e.dataTransfer.getData('text/plain');
+    const target = e.target.closest('.deal-rank-item');
+    if (!target || target.dataset.id === String(dragId)) return;
+    const ids = $$('.deal-rank-item').map((el) => +el.dataset.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(+target.dataset.id);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, dragId);
+    dealSizesState.rankOrder = ids;
+    dealSizesState.rankResult = null;
+    renderDealSizesRank();
+  });
+
+  $$('.deal-rank-up').forEach((btn) => {
+    btn.onclick = () => {
+      const id = +btn.dataset.id;
+      const idx = dealSizesState.rankOrder.indexOf(id);
+      if (idx <= 0) return;
+      const arr = [...dealSizesState.rankOrder];
+      [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+      dealSizesState.rankOrder = arr;
+      dealSizesState.rankResult = null;
+      renderDealSizesRank();
+    };
+  });
+  $$('.deal-rank-down').forEach((btn) => {
+    btn.onclick = () => {
+      const id = +btn.dataset.id;
+      const idx = dealSizesState.rankOrder.indexOf(id);
+      if (idx < 0 || idx >= dealSizesState.rankOrder.length - 1) return;
+      const arr = [...dealSizesState.rankOrder];
+      [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+      dealSizesState.rankOrder = arr;
+      dealSizesState.rankResult = null;
+      renderDealSizesRank();
+    };
+  });
+
+  $('#sizesRankBack').onclick = () => {
+    dealSizesState.sub = 'menu';
+    renderDealSizes();
+  };
+  $('#sizesRankShuffle').onclick = () => {
+    resetDealSizesRank();
+    renderDealSizesRank();
+  };
+  $('#sizesRankCheck').onclick = () => {
+    const userOrder = $$('.deal-rank-item').map((el) => +el.dataset.id);
+    dealSizesState.rankOrder = userOrder;
+    const wrongPositions = userOrder
+      .map((id, i) => (id !== correct[i] ? i : -1))
+      .filter((i) => i >= 0);
+    dealSizesState.rankResult = {
+      correctCount: 9 - wrongPositions.length,
+      wrongPositions,
+    };
+    renderDealSizesRank();
+  };
+}
+
+function renderDealSizesValues() {
+  const deck = dealSizesState.valueDeck;
+  const idx = dealSizesState.valueIdx;
+  const fb = dealSizesState.valueFeedback;
+
+  if (idx >= deck.length) {
+    const total = deck.length;
+    const score = dealSizesState.valueScore;
+    const pct = Math.round((score / total) * 100);
+    $(MAIN).innerHTML = `
+      <h1 class="page-title">Value drill complete</h1>
+      <div class="card" style="text-align:center">
+        <div style="font-size:3rem;font-weight:800;color:var(--accent)">${pct}%</div>
+        <p style="color:var(--muted);margin:12px 0">${score} / ${total} within ±${DEAL_SIZE_TOLERANCE}bn</p>
+        <div class="btn-row" style="justify-content:center">
+          <button type="button" class="btn btn-secondary" id="sizesValBack">Back</button>
+          <button type="button" class="btn btn-primary" id="sizesValRetry">Try again</button>
+        </div>
+      </div>
+    `;
+    $('#sizesValBack').onclick = () => {
+      dealSizesState.sub = 'menu';
+      renderDealSizes();
+    };
+    $('#sizesValRetry').onclick = () => {
+      resetDealSizesValues();
+      renderDealSizesValues();
+    };
+    return;
+  }
+
+  const id = deck[idx];
+  const d = dealSizeById(id);
+  const curSym = d.currency;
+
+  let feedbackHtml = '';
+  if (fb) {
+    feedbackHtml = `
+      <div class="sizes-value-feedback ${fb.ok ? 'sizes-result-ok' : 'sizes-result-bad'}">
+        <p><strong>${fb.ok ? 'Correct' : 'Not quite'}</strong> · you entered <strong>${escHtml(String(fb.entered))}</strong> · course value: <strong>${escHtml(d.valueLabel)}</strong></p>
+        ${fb.ok ? `<p class="sizes-tolerance-note">Accepted range: ${fb.lo}–${fb.hi} ${curSym}bn</p>` : `<p class="sizes-tolerance-note">±${DEAL_SIZE_TOLERANCE}bn would accept ${fb.lo}–${fb.hi} ${curSym}bn</p>`}
+      </div>`;
+  }
+
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Type the value</h1>
+    <p class="page-sub">Deal ${idx + 1} of ${deck.length} · score ${dealSizesState.valueScore}</p>
+    <div class="card sizes-value-card">
+      <p class="sizes-deal-prompt">${escHtml(d.deal)}</p>
+      <label class="telemetry-label" for="dealValueInput">Acquisition value (${curSym} billions)</label>
+      <input type="number" id="dealValueInput" class="telemetry-input deal-value-input" inputmode="decimal" step="0.1" min="0" placeholder="e.g. ${d.valueSort}" ${fb ? 'disabled' : ''} />
+      <p class="sizes-hint">Enter the number only · ±${DEAL_SIZE_TOLERANCE} billion counts as correct</p>
+      ${feedbackHtml}
+      <div class="btn-row" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" id="sizesValBack">Back</button>
+        ${fb
+    ? `<button type="button" class="btn btn-primary" id="sizesValNext">${idx < deck.length - 1 ? 'Next deal' : 'See results'}</button>`
+    : `<button type="button" class="btn btn-primary" id="sizesValSubmit">Check</button>`}
+      </div>
+    </div>
+  `;
+
+  const input = $('#dealValueInput');
+  if (!fb) {
+    input.focus();
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('#sizesValSubmit')?.click();
+    });
+  }
+
+  $('#sizesValBack').onclick = () => {
+    dealSizesState.sub = 'menu';
+    dealSizesState.valueFeedback = null;
+    renderDealSizes();
+  };
+
+  $('#sizesValSubmit')?.addEventListener('click', () => {
+    const raw = input.value.trim();
+    if (!raw) {
+      input.focus();
+      return;
+    }
+    const entered = parseFloat(raw);
+    const actual = d.valueSort;
+    const lo = Math.round((actual - DEAL_SIZE_TOLERANCE) * 10) / 10;
+    const hi = Math.round((actual + DEAL_SIZE_TOLERANCE) * 10) / 10;
+    const ok = isDealValueCorrect(entered, actual);
+    if (ok) dealSizesState.valueScore++;
+    dealSizesState.valueFeedback = { ok, entered, lo, hi };
+    renderDealSizesValues();
+  });
+
+  $('#sizesValNext')?.addEventListener('click', () => {
+    dealSizesState.valueIdx++;
+    dealSizesState.valueFeedback = null;
+    renderDealSizesValues();
   });
 }
 
