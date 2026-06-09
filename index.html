@@ -49,5 +49,10 @@
   <script src="js/update-check.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/exam-prep.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof bootApp === 'function') bootApp();
+    });
+  </script>
 </body>
 </html>

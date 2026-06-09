@@ -98,6 +98,33 @@ function escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+function bankCount() {
+  return Array.isArray(typeof ALL_QUESTIONS !== 'undefined' ? ALL_QUESTIONS : null)
+    ? ALL_QUESTIONS.length
+    : 0;
+}
+
+function flashCount() {
+  return Array.isArray(typeof FLASHCARDS !== 'undefined' ? FLASHCARDS : null)
+    ? FLASHCARDS.length
+    : 0;
+}
+
+function showBootError(err) {
+  console.error('Boot/render failed:', err);
+  const main = $(MAIN);
+  if (!main) return;
+  main.innerHTML = `
+    <div class="card sizes-result sizes-result-bad">
+      <h1 class="page-title">Page failed to load</h1>
+      <p>Something went wrong starting the app. Try a hard reload (Ctrl+Shift+R).</p>
+      <p class="sizes-hint" style="margin-top:12px">${escHtml(err && err.message ? err.message : String(err))}</p>
+      <div class="btn-row" style="margin-top:16px">
+        <button type="button" class="btn btn-primary" onclick="location.reload()">Reload</button>
+      </div>
+    </div>`;
+}
+
 function cleanOptionLabel(s) {
   return String(s).replace(/\s+(typically|in practice|generally|broadly|often)$/i, '');
 }
@@ -469,7 +496,15 @@ function navigate(view) {
     flashcards: renderFlashcards,
     history: renderHistory,
   };
-  (renderers[view] || renderHome)();
+  try {
+    const render = renderers[view] || renderHome;
+    if (typeof render !== 'function') {
+      throw new Error(`View "${view}" is not ready yet. Reload the page.`);
+    }
+    render();
+  } catch (err) {
+    showBootError(err);
+  }
   focusMain();
 }
 
@@ -501,15 +536,15 @@ function renderHome() {
       <button type="button" class="tile" data-go="exam-prep" role="listitem"><span class="tile-icon" aria-hidden="true">✎</span><h4>Exam prep</h4><p>Takeover toolkit · short answers · theory</p></button>
       <button type="button" class="tile" data-go="compare" role="listitem"><span class="tile-icon" aria-hidden="true">⊞</span><h4>Compare</h4><p>Side-by-side matrix  -  value, type, motive</p></button>
       <button type="button" class="tile" data-go="deal-sizes" role="listitem"><span class="tile-icon" aria-hidden="true">↕</span><h4>Deal drills</h4><p>Rank value & success · type billions</p></button>
-      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${ALL_QUESTIONS.length} in bank · 10, 15, 20, or 40 per session</p></button>
-      <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${FLASHCARDS.length} cards · spaced repeat</p></button>
+      <button type="button" class="tile" data-go="practice" role="listitem"><span class="tile-icon" aria-hidden="true">✓</span><h4>Practice MCQ</h4><p>${bankCount()} in bank · 10, 15, 20, or 40 per session</p></button>
+      <button type="button" class="tile" data-go="flashcards" role="listitem"><span class="tile-icon" aria-hidden="true">🃏</span><h4>Flashcards</h4><p>${flashCount()} cards · spaced repeat</p></button>
     </div>
     ${renderGradePredictionCard(gradePred)}
     <div class="card">
       <h3>Your progress (this browser)</h3>
       <p style="color:var(--muted);font-size:0.88rem;margin-bottom:8px">
         Quiz attempts: <strong>${st.attempts}</strong> · Best score: <strong>${st.best}%</strong><br>
-        Flashcards mastered (3+ streak): <strong>${mastered}</strong> / ${FLASHCARDS.length}
+        Flashcards mastered (3+ streak): <strong>${mastered}</strong> / ${flashCount()}
       </p>
       <div class="btn-row">
         <button class="btn btn-primary" data-go="practice">Start practice →</button>
@@ -1347,7 +1382,7 @@ function renderPracticeSetup() {
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Practice MCQ</h1>
-    <p class="page-sub">${ALL_QUESTIONS.length} in bank · pick 10, 15, 20, or 40 questions per session</p>
+    <p class="page-sub">${bankCount()} in bank · pick 10, 15, 20, or 40 questions per session</p>
     <div class="card">
       <fieldset class="filter-fieldset">
         <legend>Topic filter</legend>
@@ -1672,7 +1707,7 @@ function renderFlashcards() {
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Flashcards</h1>
-    <p class="flash-stats">Card ${flashState.idx + 1} of ${flashState.deck.length} · ${dealTag} · Mastered: ${mastered}/${FLASHCARDS.length}</p>
+    <p class="flash-stats">Card ${flashState.idx + 1} of ${flashState.deck.length} · ${dealTag} · Mastered: ${mastered}/${flashCount()}</p>
     <button type="button" class="flash-card ${flashState.flipped ? 'back' : ''}" id="flashCard">
       ${flashState.flipped ? card.back : card.front}
     </button>
@@ -1739,11 +1774,10 @@ $$('.nav-btn').forEach((b) => b.addEventListener('click', () => navigate(b.datas
 
 function bootApp() {
   initUpdateCheck();
-  initTelemetry(() => navigate('home'));
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootApp);
-} else {
-  bootApp();
+  try {
+    navigate('home');
+  } catch (err) {
+    showBootError(err);
+  }
+  initTelemetry();
 }
