@@ -251,6 +251,7 @@ function saveQuizAttempt(attempt) {
   hist.unshift(attempt);
   if (hist.length > HISTORY_MAX) hist.length = HISTORY_MAX;
   localStorage.setItem(LS_HISTORY, JSON.stringify(hist));
+  renderSidebarGrade();
 }
 
 function computeBreakdown(answers) {
@@ -348,6 +349,35 @@ function gradeLevel(grade) {
   if (grade >= 8) return 'good';
   if (grade >= 6) return 'ok';
   return 'low';
+}
+
+function renderSidebarGrade() {
+  const el = document.getElementById('sidebar-grade');
+  if (!el) return;
+  const pred = computePredictedGrade(getQuizHistory());
+
+  if (!pred.attempts || pred.confidence === 'insufficient') {
+    const msg = pred.attempts
+      ? `${pred.attempts} quiz${pred.attempts === 1 ? '' : 'zes'} · need 3+ for prediction`
+      : 'Complete 3+ quizzes';
+    el.innerHTML = `
+      <button type="button" class="sidebar-grade-btn sidebar-grade-empty" id="sidebarGradeBtn" title="View quiz history">
+        <span class="sidebar-grade-label">Predicted grade</span>
+        <span class="sidebar-grade-placeholder">—</span>
+        <span class="sidebar-grade-meta">${escHtml(msg)}</span>
+      </button>`;
+  } else {
+    const lvl = gradeLevel(pred.grade);
+    const confShort = { low: 'Low conf.', medium: 'Med. conf.', high: 'High conf.' }[pred.confidence];
+    el.innerHTML = `
+      <button type="button" class="sidebar-grade-btn" id="sidebarGradeBtn" title="View quiz history and grade breakdown">
+        <span class="sidebar-grade-label">Predicted grade</span>
+        <span class="sidebar-grade-value grade-predicted grade-predicted-${lvl}">${pred.grade}<span class="grade-denom">/10</span></span>
+        <span class="sidebar-grade-meta">${pred.attempts} session${pred.attempts === 1 ? '' : 's'} · ${confShort}</span>
+      </button>`;
+  }
+
+  $('#sidebarGradeBtn')?.addEventListener('click', () => navigate('history'));
 }
 
 function renderGradePredictionCard(pred, { compact = false } = {}) {
@@ -564,6 +594,7 @@ function navigate(view, opts = {}) {
   } catch (err) {
     showBootError(err);
   }
+  renderSidebarGrade();
   focusMain();
 }
 

@@ -45,6 +45,8 @@ body {
   height: 100vh;
   overflow-y: auto;
   box-shadow: 2px 0 12px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
 }
 /* Accessibility & base (Front-End Checklist) */
 .skip-link {
@@ -133,6 +135,61 @@ body {
 }
 .nav-btn:hover { background: var(--surface2); color: var(--text); }
 .nav-btn.active { background: var(--accent); color: #fff; }
+
+#primary-nav { flex: 1; }
+
+.sidebar-grade {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.sidebar-grade-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 10px;
+  border: none;
+  border-radius: 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.sidebar-grade-btn:hover { background: var(--accent-soft); }
+.sidebar-grade-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.sidebar-grade-value {
+  display: block;
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sidebar-grade-value .grade-denom {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.sidebar-grade-placeholder {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--muted);
+}
+.sidebar-grade-meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
 
 .main {
   flex: 1;
@@ -1413,6 +1470,9 @@ body {
   }
   .brand { width: 100%; }
   .nav-btn { width: auto; flex: 1; min-width: 90px; padding: 8px; font-size: 0.78rem; }
+  #primary-nav { flex: none; width: 100%; }
+  .sidebar-grade { width: 100%; margin-top: 8px; }
+  .sidebar-grade-value { font-size: 2.25rem; }
   .main { padding: 18px 16px 40px; max-width: none; }
   .page-title { font-size: 1.35rem; }
 }
