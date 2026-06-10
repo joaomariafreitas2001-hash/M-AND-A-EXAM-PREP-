@@ -1457,6 +1457,66 @@ body {
 }
 .success-rationale-footer { margin-top: 16px; }
 
+.concept-review-menu { margin-bottom: 20px; }
+.concept-review-menu h3 {
+  font-size: 1rem;
+  color: var(--accent-text);
+  margin-bottom: 8px;
+}
+.concept-flag-pill {
+  margin-left: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  vertical-align: middle;
+}
+.concept-flagged-browse summary {
+  border-left: 3px solid #f59e0b;
+}
+.concept-review-card { max-width: 640px; }
+.concept-review-prompt {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+.concept-review-answer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.concept-flag-btn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.concept-flag-btn:hover {
+  border-color: #f59e0b;
+  color: #92400e;
+}
+.concept-flag-btn-on {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
 @media (max-width: 720px) {
   .app { flex-direction: column; }
   .sidebar {

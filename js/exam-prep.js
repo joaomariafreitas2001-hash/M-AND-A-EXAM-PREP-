@@ -1,4 +1,6 @@
 /* Exam prep: takeover toolkit, concept index, short-answer theory. Uses globals from app.js */
+const LS_CONCEPT_FLAGS = 'madeals_concept_flags_v1';
+
 let examPrepState = {
   sub: 'menu',
   toolkitMode: 'browse',
@@ -12,13 +14,71 @@ let examPrepState = {
   saRevealed: false,
   tkQuizLogged: false,
   saLogged: false,
+  conceptDeck: [],
+  conceptIdx: 0,
+  conceptRevealed: false,
+  conceptFlaggedOnly: false,
 };
+
+function getConceptFlags() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_CONCEPT_FLAGS) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveConceptFlags(flags) {
+  try {
+    localStorage.setItem(LS_CONCEPT_FLAGS, JSON.stringify(flags));
+  } catch {
+    /* ignore */
+  }
+}
+
+function isConceptFlagged(id) {
+  return !!getConceptFlags()[id];
+}
+
+function setConceptFlagged(id, flagged) {
+  const flags = getConceptFlags();
+  if (flagged) flags[id] = true;
+  else delete flags[id];
+  saveConceptFlags(flags);
+}
+
+function toggleConceptFlagged(id) {
+  const flagged = !isConceptFlagged(id);
+  setConceptFlagged(id, flagged);
+  return flagged;
+}
+
+function getFlaggedConceptCount() {
+  const flags = getConceptFlags();
+  return CONCEPT_TERMS.filter((c) => flags[c.id]).length;
+}
+
+function startConceptReview(flaggedOnly = false) {
+  const flags = getConceptFlags();
+  let deck = flaggedOnly
+    ? CONCEPT_TERMS.filter((c) => flags[c.id])
+    : [...CONCEPT_TERMS];
+  if (!deck.length) return false;
+  examPrepState.conceptDeck = shuffle(deck);
+  examPrepState.conceptIdx = 0;
+  examPrepState.conceptRevealed = false;
+  examPrepState.conceptFlaggedOnly = flaggedOnly;
+  examPrepState.sub = 'concepts-review';
+  return true;
+}
 
 function renderExamPrep() {
   const sub = examPrepState.sub;
   if (sub === 'toolkit') return renderTakeoverToolkit();
   if (sub === 'toolkit-quiz') return renderTakeoverToolkitQuiz();
   if (sub === 'concepts') return renderConceptIndex();
+  if (sub === 'concepts-review') return renderConceptReviewSession();
+  if (sub === 'concepts-review-done') return renderConceptReviewDone();
   if (sub === 'short-answer') return renderShortAnswerSession();
   if (sub === 'short-answer-done') return renderShortAnswerDone();
   renderExamPrepMenu();
@@ -177,21 +237,36 @@ function renderConceptIndex() {
     if (!byLecture[c.lecture]) byLecture[c.lecture] = [];
     byLecture[c.lecture].push(c);
   });
+  const flaggedCount = getFlaggedConceptCount();
 
   $(MAIN).innerHTML = `
     <h1 class="page-title">Concept index</h1>
-    <p class="page-sub">${CONCEPT_TERMS.length} cross-lecture terms often tested in short-answer theory</p>
+    <p class="page-sub">${CONCEPT_TERMS.length} terms · ${flaggedCount} flagged for review</p>
+    <div class="card concept-review-menu">
+      <h3>Review one by one</h3>
+      <p class="sizes-hint">See each term, try to define it, reveal the answer, then flag anything you want to revisit.</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="epConceptReviewAll">All terms →</button>
+        <button type="button" class="btn btn-secondary" id="epConceptReviewFlagged" ${flaggedCount ? '' : 'disabled'}>Flagged only (${flaggedCount})</button>
+        ${flaggedCount ? '<button type="button" class="btn btn-secondary" id="epConceptClearFlags">Clear flags</button>' : ''}
+      </div>
+    </div>
     ${Object.entries(byLecture).map(([lec, items]) => `
       <div class="toolkit-section">
         <h3>${escHtml(lec)}</h3>
         <div class="toolkit-cards">
-          ${items.map((c) => `
-            <details class="toolkit-card">
-              <summary><strong>${escHtml(c.term)}</strong></summary>
+          ${items.map((c) => {
+            const flagged = isConceptFlagged(c.id);
+            return `
+            <details class="toolkit-card${flagged ? ' concept-flagged-browse' : ''}">
+              <summary>
+                <strong>${escHtml(c.term)}</strong>
+                ${flagged ? '<span class="concept-flag-pill">Review</span>' : ''}
+              </summary>
               <p>${escHtml(c.definition)}</p>
               <p class="toolkit-exam-line"><strong>Exam line:</strong> ${escHtml(c.examLine)}</p>
-            </details>
-          `).join('')}
+            </details>`;
+          }).join('')}
         </div>
       </div>
     `).join('')}
@@ -200,6 +275,18 @@ function renderConceptIndex() {
       <button type="button" class="btn btn-primary" id="epToSA">Short-answer drill →</button>
     </div>
   `;
+  $('#epConceptReviewAll').onclick = () => {
+    if (startConceptReview(false)) renderConceptReviewSession();
+  };
+  $('#epConceptReviewFlagged')?.addEventListener('click', () => {
+    if (startConceptReview(true)) renderConceptReviewSession();
+  });
+  $('#epConceptClearFlags')?.addEventListener('click', () => {
+    if (confirm('Clear all flagged concepts?')) {
+      saveConceptFlags({});
+      renderConceptIndex();
+    }
+  });
   $('#epBack').onclick = () => {
     examPrepState.sub = 'menu';
     renderExamPrepMenu();
@@ -213,6 +300,95 @@ function renderConceptIndex() {
     examPrepState.sub = 'short-answer';
     renderShortAnswerSession();
   };
+}
+
+function renderConceptReviewSession() {
+  const deck = examPrepState.conceptDeck;
+  const idx = examPrepState.conceptIdx;
+  if (idx >= deck.length) {
+    examPrepState.sub = 'concepts-review-done';
+    return renderConceptReviewDone();
+  }
+
+  const c = deck[idx];
+  const revealed = examPrepState.conceptRevealed;
+  const flagged = isConceptFlagged(c.id);
+
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Concept review</h1>
+    <p class="page-sub">Card ${idx + 1} of ${deck.length} · <span class="phase-badge phase-regulatory">${escHtml(c.lecture)}</span></p>
+    <div class="card concept-review-card">
+      <p class="concept-review-prompt">${escHtml(c.term)}</p>
+      ${!revealed
+    ? '<p class="sizes-hint">Try to define this in your head, then reveal the answer.</p>'
+    : `
+        <div class="concept-review-answer">
+          <p>${escHtml(c.definition)}</p>
+          <p class="toolkit-exam-line"><strong>Exam line:</strong> ${escHtml(c.examLine)}</p>
+        </div>
+      `}
+      <button type="button" class="btn concept-flag-btn${flagged ? ' concept-flag-btn-on' : ''}" id="epConceptFlag" aria-pressed="${flagged}">
+        ${flagged ? '★ Flagged for review' : '☆ Flag for later review'}
+      </button>
+      <div class="btn-row" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" id="epBack">Exit</button>
+        ${idx > 0 ? '<button type="button" class="btn btn-secondary" id="epConceptPrev">Previous</button>' : ''}
+        ${revealed
+    ? `<button type="button" class="btn btn-primary" id="epConceptNext">${idx < deck.length - 1 ? 'Next' : 'Finish'}</button>`
+    : '<button type="button" class="btn btn-primary" id="epConceptReveal">Show answer</button>'}
+      </div>
+    </div>
+  `;
+
+  $('#epConceptFlag').onclick = () => {
+    toggleConceptFlagged(c.id);
+    renderConceptReviewSession();
+  };
+  $('#epBack').onclick = () => {
+    examPrepState.sub = 'concepts';
+    renderConceptIndex();
+  };
+  $('#epConceptPrev')?.addEventListener('click', () => {
+    examPrepState.conceptIdx--;
+    examPrepState.conceptRevealed = false;
+    renderConceptReviewSession();
+  });
+  $('#epConceptReveal')?.addEventListener('click', () => {
+    examPrepState.conceptRevealed = true;
+    renderConceptReviewSession();
+  });
+  $('#epConceptNext')?.addEventListener('click', () => {
+    examPrepState.conceptIdx++;
+    examPrepState.conceptRevealed = false;
+    renderConceptReviewSession();
+  });
+}
+
+function renderConceptReviewDone() {
+  const flaggedCount = getFlaggedConceptCount();
+  $(MAIN).innerHTML = `
+    <h1 class="page-title">Review complete</h1>
+    <div class="card" style="text-align:center">
+      <p style="font-size:1.1rem;margin-bottom:12px">You went through <strong>${examPrepState.conceptDeck.length}</strong> concept${examPrepState.conceptDeck.length === 1 ? '' : 's'}.</p>
+      <p class="sizes-hint">${flaggedCount} flagged for later review (saved in this browser).</p>
+      <div class="btn-row" style="justify-content:center;margin-top:20px">
+        <button type="button" class="btn btn-secondary" id="epBack">Concept index</button>
+        ${flaggedCount ? '<button type="button" class="btn btn-primary" id="epConceptReviewFlagged">Review flagged only</button>' : ''}
+        <button type="button" class="btn btn-secondary" id="epConceptRetry">Run again (shuffle)</button>
+      </div>
+    </div>
+  `;
+  $('#epBack').onclick = () => {
+    examPrepState.sub = 'concepts';
+    renderConceptIndex();
+  };
+  $('#epConceptReviewFlagged')?.addEventListener('click', () => {
+    if (startConceptReview(true)) renderConceptReviewSession();
+  });
+  $('#epConceptRetry')?.addEventListener('click', () => {
+    const flaggedOnly = examPrepState.conceptFlaggedOnly && getFlaggedConceptCount() > 0;
+    if (startConceptReview(flaggedOnly)) renderConceptReviewSession();
+  });
 }
 
 function renderShortAnswerSession() {
