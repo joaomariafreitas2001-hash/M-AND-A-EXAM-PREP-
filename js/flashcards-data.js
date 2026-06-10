@@ -45,6 +45,7 @@
   { id: 'l2-ebitda', lecture: 2, front: 'L2: EBITDA multiple formula', back: 'Price = (Multiple × EBITDA) − Debt' },
   { id: 'l2-earn', lecture: 2, front: 'L2: Earn-out', back: 'Deferred payment tied to future performance (EBITDA, revenue, etc.) · Aligns incentives · Risk: buyer can influence metric' },
   { id: 'l2-curse', lecture: 2, front: 'L2: Winner\'s curse', back: 'In auctions, winner often overpays  -  always have walk-away price and discipline to use it' },
+  { id: 'l2-zopa', lecture: 2, front: 'L2: ZOPA', back: 'Zone of potential agreement = overlap between seller floor and buyer ceiling · No overlap = no deal · Example: €55m–€65m' },
   { id: 'l3-hard', lecture: 3, front: 'L3: Hard vs soft post-acquisition problems', back: 'Hard = pre-deal (bad strategy, DD, price, synergies) · Soft = post-deal (culture, mgmt teams, communication)' },
   { id: 'l3-67', lecture: 3, front: 'L3: Manager turnover statistic', back: '~67% of acquired company managers leave within 4 years' },
   { id: 'l3-comm', lecture: 3, front: 'L3: Employee communication priority #1', back: '"Am I included in the new organization?"  -  before brand, strategy, or acquirer identity' },

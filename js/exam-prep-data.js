@@ -188,6 +188,8 @@ const CONCEPT_TERMS = [
   { id: 'legal-forms-ladder', term: 'Legal forms ladder', lecture: 'L1 Intro', definition: 'Commitment spectrum: distribution → licence → consortium → JV → minority → majority → 100% → merger.', examLine: 'JV = medium commitment; merger = highest (unwind via spin-off).' },
   { id: 'economies-of-scope', term: 'Economies of scope', lecture: 'L1 Intro', definition: 'Producing more products or services through the same organizational structure after combining businesses.', examLine: 'Scope motive — new capabilities, not just cost cuts.' },
   { id: 'badwill', term: 'Badwill (negative goodwill)', lecture: 'L1 Intro', definition: 'Buying a company below book value. Common in distressed bank mergers; strengthens acquirer capital.', examLine: 'CaixaBank–Bankia context — buy below book → negative goodwill.' },
+  { id: 'selling-motives', term: 'Motivations for selling', lecture: 'L1 Intro', definition: 'Family: succession gaps, retirement, partner conflicts. Corporate: focus on core, country risk, unprofitable units, antitrust remedies.', examLine: 'Sellers rarely fully transparent — buyer must investigate independently.' },
+  { id: 'joint-venture', term: 'Joint venture (JV)', lecture: 'L1 Intro', definition: 'New shared company for a specific objective. Medium commitment on the legal forms ladder between licence and majority stake.', examLine: 'Alliance when full acquisition commitment is not yet justified.' },
 
   // —— L2 Acquisition Process ——
   { id: 'twelve-phases', term: '12-phase acquisition process', lecture: 'L2 Process', definition: 'Structured workflow from business objectives through search, negotiation, structuring, integration plan, DD, closing, integration, and post-deal analysis.', examLine: 'Phase 8 = integration plan; phase 9 = due diligence — order matters.' },
@@ -204,6 +206,15 @@ const CONCEPT_TERMS = [
   { id: 'batna', term: 'BATNA', lecture: 'L2 Process', definition: 'Best Alternative to a Negotiated Agreement — your fallback if talks fail. Sets the walk-away discipline.', examLine: 'Used with walk-away price in negotiations and auctions.' },
   { id: 'winners-curse', term: 'Winner\'s curse', lecture: 'L2 Process', definition: 'In auctions, the winner is often the bidder who most overestimated value and overpaid.', examLine: 'Always set a walk-away price in competitive processes.' },
   { id: 'walk-away-price', term: 'Walk-away price', lecture: 'L2 Process', definition: 'Maximum price (buyer) or minimum acceptable price (seller) before exiting negotiations.', examLine: 'Discipline against winner\'s curse in auctions.' },
+  { id: 'opening-price', term: 'Opening price', lecture: 'L2 Process', definition: 'First offer in negotiation — buyer opens low, seller opens high. Tactical anchor, not the walk-away limit.', examLine: 'Paired with walk-away and ZOPA in L2 negotiation block.' },
+  { id: 'zopa', term: 'ZOPA (zone of potential agreement)', lecture: 'L2 Process', definition: 'Overlap between seller floor (minimum acceptable) and buyer ceiling (maximum willing to pay). No overlap means no deal is possible.', examLine: 'Seller €55m floor + buyer €65m ceiling → ZOPA = €55–65m.' },
+  { id: 'asymmetric-information', term: 'Asymmetric information', lecture: 'L2 Process', definition: 'Seller knows more about the target than the buyer. Due diligence and vendor DD exist to reduce this gap.', examLine: 'Core L2 theme — DD verifies; integration plan frames what to test.' },
+  { id: 'auction-process', term: 'Auction process', lecture: 'L2 Process', definition: 'Seller invites multiple bidders to compete. Raises price for seller but creates winner\'s curse risk for buyer.', examLine: 'Competitive sale — always pair with walk-away discipline.' },
+  { id: 'loi-binding-terms', term: 'LOI: binding vs non-binding', lecture: 'L2 Process', definition: 'LOI is non-binding on price and structure but binding on process terms (exclusivity, confidentiality, timeline).', examLine: 'Exam trap — LOI ≠ committed to close at that price.' },
+  { id: 'retainer-success-fee', term: 'Retainer + success fee (IB)', lecture: 'L2 Process', definition: 'Investment banks earn ongoing retainer plus contingent success fee if the deal closes.', examLine: 'Creates incentive to close — contrast with hourly accountant/lawyer fees.' },
+  { id: 'dd-renegotiation', term: 'DD findings → renegotiation', lecture: 'L2 Process', definition: 'Problems uncovered in due diligence often trigger price or term revision rather than deal collapse.', examLine: 'Contingent liability may reduce price — not always kill the deal.' },
+  { id: 'asset-deal-tax-credits', term: 'Asset deal tax-credit loss', lecture: 'L2 Process', definition: 'Buying assets resets depreciation base to market value — buyer may lose tax credits retained in a share deal.', examLine: 'Trade-off: liability protection vs tax benefit.' },
+  { id: 'asset-based-valuation', term: 'Asset-based valuation', lecture: 'L2 Process', definition: 'Net asset value method — used for asset-heavy or distressed businesses, alongside DCF and EBITDA multiples.', examLine: 'Third valuation pillar after DCF and EBITDA multiple.' },
   { id: 'dcf', term: 'DCF valuation', lecture: 'L2 Process', definition: 'Intrinsic valuation: present value of projected free cash flows discounted at WACC.', examLine: 'One of three main methods alongside EBITDA multiple and asset-based.' },
   { id: 'ebitda-multiple', term: 'EBITDA multiple pricing', lecture: 'L2 Process', definition: 'Price = (Multiple × EBITDA) − Net Debt. Standard shortcut in M&A valuation.', examLine: 'Know the formula — exam favourite alongside DCF.' },
   { id: 'earn-out', term: 'Earn-out', lecture: 'L2 Process', definition: 'Deferred payment linked to future performance metrics — bridges valuation gaps between buyer and seller.', examLine: 'Metric manipulation risk — buyer controls ops post-close.' },
@@ -230,6 +241,7 @@ const CONCEPT_TERMS = [
   { id: 'federated-integration', term: 'Federated vs forced integration', lecture: 'L3 Integration', definition: 'Federated: preserve brand/autonomy (LinkedIn). Forced: full assimilation (Kraft–Cadbury). Cultural outcomes differ sharply.', examLine: 'Microsoft–LinkedIn = federated success; Kraft–Cadbury = forced failure.' },
   { id: 'manager-turnover', term: 'Acquired manager turnover', lecture: 'L3 Integration', definition: 'Approximately 67% of managers in acquired firms leave within four years.', examLine: 'Key stat for horizontal integration and cultural risk questions.' },
   { id: 'merger-communication', term: 'Merger communication priorities', lecture: 'L3 Integration', definition: 'Employees need answers in order: Am I included? How do I participate? Where is my job? Who is my boss? Pay/benefits?', examLine: 'Prompt, frequent, coherent — acquiring management must be visible.' },
+  { id: 'business-culture', term: 'Business culture', lecture: 'L3 Integration', definition: 'Shared rules, beliefs, and viewpoints operating at an unconscious level across the organization. Invisible until cultures collide.', examLine: 'Horizontal integration = highest cultural clash risk.' },
 
   // —— L5 MBOs ——
   { id: 'mbo', term: 'MBO (management buyout)', lecture: 'L5 MBO', definition: 'Existing managers buy the company, typically via a Newco vehicle funded by PE equity and debt.', examLine: 'Lower risk than MBI — managers know the business.' },
@@ -250,6 +262,9 @@ const CONCEPT_TERMS = [
   { id: 'mbo-exit-routes', term: 'MBO / PE exit routes', lecture: 'L5 MBO', definition: 'Trade sale, MBO, SBO, IPO, or write-off. Trade sale often achieves highest price.', examLine: 'IPO is also M&A currency and PE exit path.' },
   { id: 'six-fs', term: 'Managers\' "6 Fs"', lecture: 'L5 MBO', definition: 'Ideal post-MBO management style: focused, fast, flexible, flat, frugal, friendly.', examLine: 'Culture target for managers after leverage — exam favourite list.' },
   { id: 'ideal-mbo-target', term: 'Ideal MBO target profile', lecture: 'L5 MBO', definition: 'Stable predictable FCF, strong brands, low existing debt, moderate capex/WC, realistic exit.', examLine: 'Works only when cash flow can service 3–5× leverage.' },
+  { id: 'seven-value-sources', term: 'Seven sources of MBO value', lecture: 'L5 MBO', definition: 'Target selection, low entry price, leverage, ratchet terms, EBITDA growth, balance-sheet optimisation, high exit multiple.', examLine: 'Span entry, operations, and exit — not leverage alone.' },
+  { id: 'mbo-debt-service', term: 'Post-MBO debt service priority', lecture: 'L5 MBO', definition: 'After buyout, servicing acquisition debt is the dominant priority — cash flow must cover senior and mezzanine obligations.', examLine: 'Grow EBITDA and optimise working capital to pay debt.' },
+  { id: 'financial-covenants', term: 'Financial covenants (MBO)', lecture: 'L5 MBO', definition: 'Bank-imposed limits (Debt/EBITDA, Debt/equity, minimum equity) the borrower must maintain or risk default.', examLine: 'Negotiated with banks alongside rate and repayment schedule.' },
 
   // —— L6 PE & VC ——
   { id: 'gp-lp', term: 'GP vs LP', lecture: 'L6 PE/VC', definition: 'General Partner manages the fund and earns fees/carry. Limited Partners (pensions, insurers, SWFs) provide capital passively.', examLine: 'GP runs deals; LP commits ~10 years.' },
@@ -274,6 +289,8 @@ const CONCEPT_TERMS = [
   { id: 'pac-man-concept', term: 'Pac-Man defense', lecture: 'L7 Takeovers', definition: 'Target launches a counter-bid to acquire the hostile bidder.', examLine: 'Post-bid — rare; needs financial firepower.' },
   { id: 'golden-parachute-concept', term: 'Golden parachute', lecture: 'L7 Takeovers', definition: 'Pre-agreed executive payout on change of control, raising effective takeover cost.', examLine: 'Pre-bid defense — friction, not a block.' },
   { id: 'crown-jewels-concept', term: 'Crown jewels defense', lecture: 'L7 Takeovers', definition: 'Selling or spinning off the most valuable assets to make the company less attractive.', examLine: 'Pre-bid (or reactive) — strip what the raider wants.' },
+  { id: 'shark-repellent-concept', term: 'Shark repellent', lecture: 'L7 Takeovers', definition: 'Charter or by-law provisions making hostile takeovers harder (staggered board, supermajority votes, dual-class shares).', examLine: 'Pre-bid structural defense — class of barriers, not one tactic.' },
+  { id: 'takeover-bid', term: 'Takeover bid / tender offer', lecture: 'L7 Takeovers', definition: 'Public offer to acquire shares of a listed company. Friendly if board supports; hostile if bidder goes directly to shareholders.', examLine: 'Foundation L7 term — cash common when board opposes.' },
   { id: 'spain-mandatory-bid', term: 'Spain mandatory bid (30% / 50%)', lecture: 'L7 Takeovers', definition: '>30% voting rights or >50% board seats triggers obligation to bid for 100% of the company.', examLine: 'Two Spanish triggers — know both numbers.' },
   { id: 'uk-pusu-concept', term: 'UK PUSU (put up or shut up)', lecture: 'L7 Takeovers', definition: 'After a public approach, bidder must make a firm offer or withdraw within ~28 days.', examLine: 'Kraft–Cadbury context — stops endless speculation.' },
   { id: 'scheme-arrangement', term: 'Scheme of arrangement', lecture: 'L7 Takeovers', definition: 'UK court-supervised process requiring 75% shareholder approval for a takeover.', examLine: 'Alternative to tender offer in UK — mentioned with PUSU.' },
@@ -289,6 +306,7 @@ const CONCEPT_TERMS = [
   { id: 'book-building', term: 'Book-building', lecture: 'L8 IPO', definition: 'Price discovery via institutional demand collected during the road show before listing.', examLine: 'Sets offer price from demand — core IPO pricing mechanism.' },
   { id: 'road-show', term: 'IPO road show', lecture: 'L8 IPO', definition: 'Management presents the investment case to institutional investors before book-building.', examLine: 'Between prospectus filing and price setting.' },
   { id: 'firm-commitment', term: 'Firm commitment underwriting', lecture: 'L8 IPO', definition: 'Underwriter buys the entire issue and resells it, bearing full placement risk.', examLine: 'Highest-risk placement type for the bank.' },
+  { id: 'best-efforts-underwriting', term: 'Best efforts underwriting', lecture: 'L8 IPO', definition: 'Underwriter tries to sell shares but does not guarantee full placement — lower bank risk than firm commitment.', examLine: 'Contrast with firm commitment where bank buys entire issue.' },
   { id: 'greenshoe', term: 'Greenshoe (over-allotment)', lecture: 'L8 IPO', definition: 'Option to issue up to ~15% extra shares for ~1 month to stabilise post-IPO price.', examLine: 'Part of stabilisation period after listing.' },
   { id: 'ipo-stabilisation', term: 'IPO stabilisation', lecture: 'L8 IPO', definition: 'Post-listing price support, primarily via greenshoe, for about one month.', examLine: 'Underwriter buys/sells to smooth early trading.' },
   { id: 'spain-ipo-requirements', term: 'Spain IPO minimum requirements', lecture: 'L8 IPO', definition: 'Capital > €1,202,025; >100 shareholders; profitability thresholds (6% of capital in 2 of 3 years, etc.).', examLine: 'CNMV filing — know capital floor for Spain.' },
@@ -413,6 +431,20 @@ const SHORT_ANSWER_QUESTIONS = [
     prompt: 'Why is cultural due diligence important?',
     modelAnswer: 'Post-deal failure often comes from soft factors — culture clash, fear, loss of identity — not just financial mispricing. Cultural DD flags integration risks as important as financial DD.',
     rubric: ['Soft / cultural risks', 'Integration failure', 'Parallel to financial DD'],
+  },
+  {
+    id: 'sa-zopa',
+    topic: 'L2 Process',
+    prompt: 'What is ZOPA and how do you check if a deal is possible?',
+    modelAnswer: 'ZOPA (zone of potential agreement) is the overlap between the seller\'s minimum acceptable price and the buyer\'s maximum willing price. Compare walk-away prices: if the buyer\'s ceiling is above the seller\'s floor, a negotiated deal is possible within that range.',
+    rubric: ['Overlap of buyer ceiling and seller floor', 'Walk-away prices', 'No overlap = no deal'],
+  },
+  {
+    id: 'sa-loi-binding',
+    topic: 'L2 Process',
+    prompt: 'Which LOI terms are binding vs non-binding?',
+    modelAnswer: 'The LOI is generally non-binding on deal economics (indicative price, structure) but binding on process terms such as exclusivity, confidentiality, and the due diligence timeline. Signing an LOI does not commit either party to close at that price.',
+    rubric: ['Non-binding on price/structure', 'Binding on exclusivity/confidentiality', 'Framework before SPA'],
   },
   {
     id: 'sa-pe-2-20',
